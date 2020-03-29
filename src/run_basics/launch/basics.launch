@@ -6,8 +6,8 @@
               args="compressed in:=/usb_cam/image_raw raw out:=/usb_cam/image_raw/raw" />
 
         <!-- run cropper for pintcloud data to match size of images -->
-        <!-- <node pkg="run_basics" type="cloudCrop.py" name="cropper"
-              args="" /> -->
+        <node pkg="run_basics" type="cloudCrop" name="cropper"
+              args="" />
 
         <!-- run rviz -->
         <node pkg="rviz" type="rviz" name="rviz_gui"
