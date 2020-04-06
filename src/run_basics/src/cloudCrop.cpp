@@ -18,18 +18,29 @@
 #define PI 3.14159265
 
 ros::Subscriber subVeloFront;
+ros::Subscriber subVeloTop;
 ros::Publisher croppedCloud_pub;
 
-bool getInAngle(velodyne_pointcloud::PointXYZIR point)
+pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr TopCloud( new pcl::PointCloud<velodyne_pointcloud::PointXYZIR> );
+
+bool getInAngle(velodyne_pointcloud::PointXYZIR point/*, bool front*/)
 {
 
-    float sX = 0; //Distance Camera System to Lidar System!
+    float sX = -0.95; //Distance Camera System to Top Lidar System!
     float sY = 0;
-    float sZ = 0;
-    float pX = point.x; //Position of Point!
-    float pY = point.y;
-    float pZ = point.z;
-
+    float sZ = 0.53;
+//    if (front)
+//    {
+//        float pX = (sqrt(2)/2)*point.x-(sqrt(2)/2)*point.y; //Position of Point, rotated 45°!
+//        float pY = (sqrt(2)/2)*point.x+(sqrt(2)/2)*point.y;
+//        float pZ = point.z;
+//    }
+//    else
+//    {
+        float pX = point.x; //Position of Point!
+        float pY = point.y;
+        float pZ = point.z;
+//    }
     float angleWidth = 45;
     float angleHeight = 25;
     static float tanWidth = tan(angleWidth  * PI / 180.0);
@@ -64,56 +75,56 @@ bool getInAngle(velodyne_pointcloud::PointXYZIR point)
     return true;
 }
 
-void veloCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
+velodyne_pointcloud::PointXYZIR transformFrontToTopVelo(velodyne_pointcloud::PointXYZIR point)
 {
-    ROS_INFO("Recived new pointCloud!");
+    float sX = 1.25; //Distance Top to Front!
+    float sY = 0.66;
+    float sZ = -1.83;
 
-//    std::cout << (*data).fields[0] << std::endl;
-//    std::cout << (*data).fields[1] << std::endl;
-//    std::cout << (*data).fields[2] << std::endl;
-//    std::cout << (*data).fields[3] << std::endl;
-//    std::cout << (*data).fields[4] << std::endl;
-//    std::cout << (*data).fields[5] << std::endl;
-//    std::cout << (*data).fields[6] << std::endl;
-//    std::cout << (*data).fields[7] << std::endl;
-//    std::cout << (*data).fields[8] << std::endl;
-//    std::cout << (*data).fields[9] << std::endl;
-//    std::cout << (*data).height << std::endl;
-//    std::cout << (*data).width << std::endl;
+    float pX = (sqrt(2)/2)*point.x-(sqrt(2)/2)*point.y; //Position of Point, rotated 45°!
+    float pY = (sqrt(2)/2)*point.x+(sqrt(2)/2)*point.y;
+    float pZ = point.z;
 
-//    pcl::PCLPointCloud2 pcl_pc2;
-//    pcl_conversions::toPCL(*data,pcl_pc2);
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-//    pcl::fromPCLPointCloud2(pcl_pc2,*temp_cloud);
+    velodyne_pointcloud::PointXYZIR ret_point;
+
+    ret_point.x = sX + pX;
+    ret_point.y = sY + pY;
+    ret_point.z = sZ + pZ;
+
+    return ret_point;
+}
+
+void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
+{
+    ROS_INFO("Recived new Front-pointCloud!");
 
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
-//    pcl::fromROSMsg(*data, *cloud);
     pcl::PCLPointCloud2 pcl_pc2;
     pcl_conversions::toPCL(*data, pcl_pc2);
     fromPCLPointCloud2(pcl_pc2, *cloud);
 
-//    pcl::CropBox<pcl::PointXYZI> BoxFilter;
-
-//    BoxFilter.setMin(Eigen::Vector4f(0, -5, -4, 1.0));
-//    BoxFilter.setMax(Eigen::Vector4f(5, 5, 20, 1.0));
-//    BoxFilter.setRotation(Eigen::Vector3f(0, 0, 43.244));
-//    BoxFilter.setInputCloud(cloud);
-
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr dataOut( new pcl::PointCloud<velodyne_pointcloud::PointXYZIR> );
-    //sensor_msgs::PointCloud2 dataOut;
-    //BoxFilter.filter(*dataOut);
 
-    pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*cloud, *dataOut);
+    pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*TopCloud, *dataOut);
+
+    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr fullCloud( new pcl::PointCloud<velodyne_pointcloud::PointXYZIR> );
+
+    pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*TopCloud, *fullCloud);
+
+    for (std::size_t i = 0; i < cloud->points.size (); ++i)
+    {
+        fullCloud->points.push_back(transformFrontToTopVelo(cloud->points[i]));
+    }
 
     dataOut->width = 0;
     dataOut->height = 1;
     dataOut->points.clear();
 
-    for (std::size_t i = 0; i < cloud->points.size (); ++i)
+    for (std::size_t i = 0; i < fullCloud->points.size (); ++i)
     {
-        if (getInAngle(cloud->points[i]))
+        if (getInAngle(fullCloud->points[i]))
         {
-            dataOut->points.push_back(cloud->points[i]);
+            dataOut->points.push_back(fullCloud->points[i]);
             dataOut->width = dataOut->width+1;
         }
     }
@@ -131,13 +142,26 @@ void veloCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
     //croppedCloud_pub.publish(organized_out_msg);
 }
 
+void veloTopCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
+{
+    ROS_INFO("Recived new Top-pointCloud!");
+
+    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
+    pcl::PCLPointCloud2 pcl_pc2;
+    pcl_conversions::toPCL(*data, pcl_pc2);
+    fromPCLPointCloud2(pcl_pc2, *cloud);
+
+    pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*cloud, *TopCloud);
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "cloudCrop");
 
     ros::NodeHandle nh;
 
-    subVeloFront = nh.subscribe("/velodyne/front/velodyne_points", 1000, veloCallback);
+    subVeloFront = nh.subscribe("/velodyne/front/velodyne_points", 1000, veloFrontCallback);
+    subVeloTop = nh.subscribe("/velodyne/top/velodyne_points", 1000, veloTopCallback);
     croppedCloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/cropped_velodyne_points", 1000);
 
     ros::spin();
