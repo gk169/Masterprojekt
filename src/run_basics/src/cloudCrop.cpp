@@ -11,6 +11,7 @@
 #include <pcl/range_image/range_image.h>
 #include <pcl/visualization/range_image_visualizer.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/io/pcd_io.h>
 
 #include "../include/run_basics/organize_velodyne_cloud.h"
 
@@ -90,6 +91,8 @@ velodyne_pointcloud::PointXYZIR transformFrontToTopVelo(velodyne_pointcloud::Poi
     ret_point.x = sX + pX;
     ret_point.y = sY + pY;
     ret_point.z = sZ + pZ;
+    ret_point.ring = point.ring;
+    ret_point.intensity = point.intensity;
 
     return ret_point;
 }
@@ -128,6 +131,18 @@ void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
             dataOut->width = dataOut->width+1;
         }
     }
+//    for (std::size_t i = 0; i < TopCloud->points.size (); ++i)
+//    {
+//        if (getInAngle(TopCloud->points[i]))
+//        {
+//            dataOut->points.push_back(TopCloud->points[i]);
+//            dataOut->width = dataOut->width+1;
+//        }
+//    }
+
+//    pcl::io::savePCDFileASCII ("/home/micha/Masterprojekt/cropped_cloud.pcd", *dataOut.get());
+//    std::cout << "---------------" << std::endl;
+//    std::this_thread::sleep_for(std::chrono::seconds(3));
 
     sensor_msgs::PointCloud2 out_msg;
     pcl::toROSMsg(*dataOut.get(),out_msg );
@@ -156,6 +171,25 @@ void veloTopCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 
 int main(int argc, char **argv)
 {
+    // Open a scan
+    std::ifstream in("/home/micha/Downloads/000000.bin", std::ios::binary);
+    if (!in.is_open()) {
+        std::cerr << "Could not open the scan!" << std::endl;
+        return 1;
+    }
+
+    in.seekg(0, std::ios::end);
+    uint32_t num_points = in.tellg() / (4 * sizeof(float));
+    in.seekg(0, std::ios::beg);
+
+    std::vector<float> values(4 * num_points);
+    in.read((char*)&values[0], 4 * num_points * sizeof(float));
+
+    for (float &val: values)
+    {
+        std::cout << std::to_string(val) << std::endl;
+    }
+
     ros::init(argc, argv, "cloudCrop");
 
     ros::NodeHandle nh;

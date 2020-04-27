@@ -12,8 +12,10 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  cv_bridge
 )
 find_package( PCL 1.7 REQUIRED )
+find_package( OpenCV REQUIRED )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -129,6 +131,10 @@ include_directories(
 add_executable(cloudCrop src/cloudCrop.cpp)
 #add_dependencies(cloudCrop ${catkin_LIBRARIES})
 target_link_libraries(cloudCrop ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(segm2cloud src/segm2cloud.cpp)
+#add_dependencies(segm2cloud ${catkin_LIBRARIES})
+target_link_libraries(segm2cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
