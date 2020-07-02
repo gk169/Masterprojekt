@@ -82,8 +82,11 @@ velodyne_pointcloud::PointXYZIR transformFrontToTopVelo(velodyne_pointcloud::Poi
     float sY = 0.66;
     float sZ = -1.83;
 
-    float pX = (sqrt(2)/2)*point.x-(sqrt(2)/2)*point.y; //Position of Point, rotated 45°!
-    float pY = (sqrt(2)/2)*point.x+(sqrt(2)/2)*point.y;
+    float shiftAngle = 45.5;
+    //float pX = (sqrt(2)/2)*point.x-(sqrt(2)/2)*point.y; //Position of Point, rotated 45°!
+    //float pY = (sqrt(2)/2)*point.x+(sqrt(2)/2)*point.y;
+    float pX = (cos(shiftAngle * PI / 180.0))*point.x-(sin(shiftAngle * PI / 180.0))*point.y; //Position of Point, rotated 45°!
+    float pY = (sin(shiftAngle * PI / 180.0))*point.x+(cos(shiftAngle * PI / 180.0))*point.y;
     float pZ = point.z;
 
     velodyne_pointcloud::PointXYZIR ret_point;
@@ -112,8 +115,10 @@ void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr fullCloud( new pcl::PointCloud<velodyne_pointcloud::PointXYZIR> );
 
+    //add top points to pointcloud
     pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*TopCloud, *fullCloud);
 
+    //add front points to pointcloud
     for (std::size_t i = 0; i < cloud->points.size (); ++i)
     {
         fullCloud->points.push_back(transformFrontToTopVelo(cloud->points[i]));
@@ -171,31 +176,39 @@ void veloTopCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 
 int main(int argc, char **argv)
 {
-    // Open a scan
-    std::ifstream in("/home/micha/Downloads/000000.bin", std::ios::binary);
-    if (!in.is_open()) {
-        std::cerr << "Could not open the scan!" << std::endl;
-        return 1;
-    }
-
-    in.seekg(0, std::ios::end);
-    uint32_t num_points = in.tellg() / (4 * sizeof(float));
-    in.seekg(0, std::ios::beg);
-
-    std::vector<float> values(4 * num_points);
-    in.read((char*)&values[0], 4 * num_points * sizeof(float));
-
-    for (float &val: values)
+    bool use_static = false;
+    int c;
+    while ((c = getopt (argc, argv, "s")) != -1)
     {
-        std::cout << std::to_string(val) << std::endl;
+        switch (c)
+        {
+        case 's':
+        {
+            ROS_INFO("-s specifies. Using static topics!");
+            use_static = true;
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
     }
 
     ros::init(argc, argv, "cloudCrop");
 
     ros::NodeHandle nh;
 
-    subVeloFront = nh.subscribe("/velodyne/front/velodyne_points", 1000, veloFrontCallback);
-    subVeloTop = nh.subscribe("/velodyne/top/velodyne_points", 1000, veloTopCallback);
+    if(use_static)
+    {
+        subVeloFront = nh.subscribe("/static_points_front", 1000, veloFrontCallback);
+        subVeloTop = nh.subscribe("/static_points_top", 1000, veloTopCallback);
+    }
+    else
+    {
+        subVeloFront = nh.subscribe("/velodyne/front/velodyne_points", 1000, veloFrontCallback);
+        subVeloTop = nh.subscribe("/velodyne/top/velodyne_points", 1000, veloTopCallback);
+    }
     croppedCloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/cropped_velodyne_points", 1000);
 
     ros::spin();

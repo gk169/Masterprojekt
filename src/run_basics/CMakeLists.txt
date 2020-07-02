@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   cv_bridge
+  message_generation
 )
 find_package( PCL 1.7 REQUIRED )
 find_package( OpenCV REQUIRED )
@@ -51,11 +52,12 @@ find_package( OpenCV REQUIRED )
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  MinMaxMean.msg
+  singleObject.msg
+  ObjectList.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -72,10 +74,10 @@ find_package( OpenCV REQUIRED )
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -109,7 +111,7 @@ find_package( OpenCV REQUIRED )
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES run_basics
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
 
@@ -135,6 +137,18 @@ target_link_libraries(cloudCrop ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_executable(segm2cloud src/segm2cloud.cpp)
 #add_dependencies(segm2cloud ${catkin_LIBRARIES})
 target_link_libraries(segm2cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS})
+
+add_executable(image_publisher src/imagePub.cpp)
+#add_dependencies(image_publisher ${catkin_LIBRARIES})
+target_link_libraries(image_publisher ${catkin_LIBRARIES} ${OpenCV_LIBS})
+
+add_executable(segm2object src/segm2object.cpp)
+#add_dependencies(segm2object ${catkin_LIBRARIES})
+target_link_libraries(segm2object ${catkin_LIBRARIES} ${OpenCV_LIBS})
+
+add_executable(final_visualizer src/final_visualizer.cpp)
+#add_dependencies(final_visualizer ${catkin_LIBRARIES})
+target_link_libraries(final_visualizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

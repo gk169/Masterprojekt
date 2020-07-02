@@ -20,6 +20,8 @@
 #include <opencv2/calib3d.hpp>
 #include <cv_bridge/cv_bridge.h>
 
+#include <pcl/visualization/pcl_visualizer.h>
+
 #include "../include/run_basics/organize_velodyne_cloud.h"
 
 //typedef pcl::PointXYZ PointType;
@@ -31,6 +33,9 @@ ros::Publisher segmCloud_pub;
 
 cv::Mat latest_img;// = cv::Mat::zeros(540, 960, CV_8UC3);
 std::mutex mtxImg;
+
+// PCL viewer //
+pcl::visualization::PCLVisualizer viewer("PCL Viewer");
 
 int getYID(velodyne_pointcloud::PointXYZIR point)
 {
@@ -183,7 +188,7 @@ int getColourFromImage(velodyne_pointcloud::PointXYZIR point)
 
 int getSegmFromImg(float x, float y)
 {
-    std::cout << (int)round(x) << "+++" << (int)round(y) << std::endl;
+    //std::cout << (int)round(x) << "+++" << (int)round(y) << std::endl;
     cv::Vec3b colour = latest_img.at<cv::Vec3b>((int)round(y), (int)round(x));
     //std::cout << std::to_string(colour.val[0]) << " --- " << std::to_string(colour.val[1]) << " --- " << std::to_string(colour.val[2]) << std::endl;
     //cv::imshow( "Display window", latest_img );
@@ -260,21 +265,43 @@ int getSegmFromImg(float x, float y)
 
     if (seg_num < 0)
     {
-        std::cout << "SEGMENT IS -1! -> bgr not found: " << std::to_string(bgr) << std::endl;
-        std::cout << std::to_string(colour[2]) << " - " << std::to_string(colour[1]) << " - " << std::to_string(colour[0]) << std::endl;
-        std::cout << std::to_string(x) << " - " << std::to_string(y) << std::endl << std::endl;
+//        std::cout << "SEGMENT IS -1! -> bgr not found: " << std::to_string(bgr) << std::endl;
+//        std::cout << std::to_string(colour[2]) << " - " << std::to_string(colour[1]) << " - " << std::to_string(colour[0]) << std::endl;
+//        std::cout << std::to_string(x) << " - " << std::to_string(y) << std::endl << std::endl;
     }
 
     return seg_num;
 }
 
+int getR(float x, float y)
+{
+    //std::cout << (int)round(x) << "+++" << (int)round(y) << std::endl;
+    cv::Vec3b colour = latest_img.at<cv::Vec3b>((int)round(y), (int)round(x));
+
+    return colour[0];
+}
+int getG(float x, float y)
+{
+    //std::cout << (int)round(x) << "+++" << (int)round(y) << std::endl;
+    cv::Vec3b colour = latest_img.at<cv::Vec3b>((int)round(y), (int)round(x));
+
+    return colour[1];
+}
+int getB(float x, float y)
+{
+    //std::cout << (int)round(x) << "+++" << (int)round(y) << std::endl;
+    cv::Vec3b colour = latest_img.at<cv::Vec3b>((int)round(y), (int)round(x));
+
+    return colour[2];
+}
+
 void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud)
 {
 //    CamA.at<float>(2,2) = 1;
-    double fWidth_px = 1139.081372/4;
-    double fHeight_px = 1140.301608/4;
-    double principal_x = 932.960706/4;
-    double principal_y = 513.207084/4;
+    double fWidth_px = 1157.519519/4; //1139.081372/4;
+    double fHeight_px = 1158.977934/4; //1140.301608/4;
+    double principal_x = 931.165229/4; //932.960706/4;
+    double principal_y = 529.569982/4; //513.207084/4;
 
     cv::Mat CamA = (cv::Mat_<double>(3,3) << fWidth_px, 0, principal_x, 0, fHeight_px, principal_y, 0, 0, 1);
     //cv::Mat CamA = (cv::Mat_<double>(3,3) << fWidth_px, 0, 0, 0, fHeight_px, 0, principal_x, principal_y, 1);
@@ -284,40 +311,167 @@ void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud)
 //    CamA.at<float>(0,2) = principal_x;
 //    CamA.at<float>(1,2) = principal_y;
 
+    float PCL_X, PCL_Y, PCL_Z, PCL_Roll, PCL_Yaw, PCL_Pitch;
+    ros::param::get("/PCL_X", PCL_X);
+    ros::param::get("/PCL_Y", PCL_Y);
+    ros::param::get("/PCL_Z", PCL_Z);
+    ros::param::get("/PCL_Roll", PCL_Roll);
+    ros::param::get("/PCL_Pitch", PCL_Pitch);
+    ros::param::get("/PCL_Yaw", PCL_Yaw);
+    float sX = -0.95; //Distance Camera System to Top Lidar System! -0.95, 0, 0.53
+    float sY = 0;
+    float sZ = 0.53;
+    //cv::Mat rvec = (cv::Mat_<double>(3,3) << cos(PCL_Yaw * PI / 180.0), (sin(PCL_Yaw * PI / 180.0)), 0, -(sin(PCL_Yaw * PI / 180.0)), cos(PCL_Yaw * PI / 180.0), 0, 0, 0, 1);
+    //cv::Mat rvec = (cv::Mat_<double>(3,3) << 1, 0, 0, 0, cos(PCL_Yaw * PI / 180.0), (sin(PCL_Yaw * PI / 180.0)), 0, -(sin(PCL_Yaw * PI / 180.0)), cos(PCL_Yaw * PI / 180.0));
+    cv::Mat rvec = (cv::Mat_<double>(3,3) << cos(PCL_Yaw * PI / 180.0), 0, -(sin(PCL_Yaw * PI / 180.0)), 0, 1, 0, (sin(PCL_Yaw * PI / 180.0)), 0, cos(PCL_Yaw * PI / 180.0));
+    cv::Mat tvec = (cv::Mat_<double>(3,1) << -sY+PCL_Y, -sZ+PCL_Z, sX+PCL_X);
+
+    std::cout << "RVEC: " << std::endl;
+    std::cout << rvec << std::endl;
+
     vector<cv::Point3f> cloud_Vec;
     for (std::size_t i = 0; i < cloud->points.size (); ++i)
     {
         cloud_Vec.push_back(cv::Point3f(-(cloud->points[i].y),-(cloud->points[i].z),cloud->points[i].x));
     }
-    float sX = -0.95; //Distance Camera System to Top Lidar System!
-    float sY = 0;
-    float sZ = 0.53;
-    cv::Mat rvec = (cv::Mat_<double>(3,3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
-    cv::Mat tvec = (cv::Mat_<double>(3,1) << -sY, -sZ, sX);
+
+    //Add rotation to adjust camera to Lidars --> ~2° like matrix in cloudCrop
+    float shiftAngle = 1;
+    //float pX = (cos(shiftAngle * PI / 180.0))*point.x-(sin(shiftAngle * PI / 180.0))*point.y; //Position of Point, rotated 45°!
+    //float pY = (sin(shiftAngle * PI / 180.0))*point.x+(cos(shiftAngle * PI / 180.0))*point.y;
+    //cv::Mat rvec = (cv::Mat_<double>(3,3) << cos(shiftAngle * PI / 180.0), (sin(shiftAngle * PI / 180.0)), 0, -(sin(shiftAngle * PI / 180.0)), cos(shiftAngle * PI / 180.0), 0, 0, 0, 1);
+//    cv::Mat rvec = (cv::Mat_<double>(3,1) << (0, 0, 1) * (shiftAngle * PI / 180.0));
+//    cv::Mat R;
+//    cv::Rodrigues(rvec, R);
+//    cv::Mat rvec = (cv::Mat_<double>(3,3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
+    //cv::Mat tvec = (cv::Mat_<double>(3,1) << 0,0,0);
+    //cv::Mat tvec = (cv::Mat_<double>(3,1) << -sY, -sZ, sX);
 
     cv::Mat distCoeffs(5,1,cv::DataType<double>::type);
-    distCoeffs.at<double>(0) = 0.056972;
-    distCoeffs.at<double>(1) = -0.114493;
-    distCoeffs.at<double>(2) = -0.001890;
-    distCoeffs.at<double>(3) = -0.002819;
+    distCoeffs.at<double>(0) = 0.050773; //0.056972;
+    distCoeffs.at<double>(1) = -0.106031; //-0.114493;
+    distCoeffs.at<double>(2) = -0.001663; //-0.001890;
+    distCoeffs.at<double>(3) = 0.000080; //-0.002819;
     distCoeffs.at<double>(4) = 0;
 
     vector<cv::Point2f> image_points;
-    cv::projectPoints(cloud_Vec, cv::Mat::eye(3, 3, CV_64F), tvec, CamA, /*cv::noArray()*/distCoeffs, image_points);
+    cv::projectPoints(cloud_Vec, rvec /*cv::Mat::eye(3, 3, CV_64F)*/, tvec, CamA, /*cv::noArray()*/distCoeffs, image_points);
 
     for (std::size_t i = 0; i < cloud->points.size (); ++i)
     {
         //std::cout << cloud_Vec[i].x << " --- " << cloud_Vec[i].y << " --- " << cloud_Vec[i].z << std::endl;
         //std::cout << rvec.at<double>(1,1) << " --- " << rvec.at<double>(0,2) << std::endl;
-        std::cout << image_points[i].x << " --- " << image_points[i].y << std::endl;
-        cloud->points[i].intensity = getSegmFromImg(image_points[i].x, image_points[i].y);
+        //std::cout << image_points[i].x << " --- " << image_points[i].y << std::endl;
+        //cloud->points[i].intensity = getSegmFromImg(image_points[i].x, image_points[i].y); //Old impl where bgr image was received
+
+        int x = (int)round(image_points[i].x);
+        int y = (int)round(image_points[i].y);
+
+        if (0>x || 480<x || 0>y || 270<y)
+        {
+            cloud->points[i].ring = 0;
+            cloud->points[i].intensity = 12;
+        }
+        else
+        {
+            cv::Vec3b bgr = latest_img.at<cv::Vec3b>(y, x);
+            cloud->points[i].ring = (int)bgr[2];
+            cloud->points[i].intensity = (int)bgr[1];
+        }
+//        std::cout << image_points[i].x << " --- " << image_points[i].y << std::endl;
+//        std::cout << "intens: " << std::to_string(bgr[1]) << "---: " << std::to_string(bgr[0]) << "--: " << std::to_string(bgr[2]) << std::endl;
     }
 
+//    static bool first = true;
+//    if (first)
+//    {
+//        //viewer.setCameraPosition(0.95,0,-0.53,0,-1,0,0);
+//        viewer.initCameraParameters ();
+//        viewer.addCoordinateSystem (1.0);
+////        ros::param::set("/CAM_PosX", -4.5);
+////        ros::param::set("/CAM_PosY", 0);
+////        ros::param::set("/CAM_PosZ", 0.86);
+////        ros::param::set("/CAM_OrtX", 0);
+////        ros::param::set("/CAM_OrtY", 0);
+////        ros::param::set("/CAM_OrtZ", 1);
+
+//        ros::param::set("/PCL_X", 0);
+//        ros::param::set("/PCL_Y", 0);
+//        ros::param::set("/PCL_Z", 0);
+//        ros::param::set("/PCL_Roll", 0);
+//        ros::param::set("/PCL_Pitch", 0);
+//        ros::param::set("/PCL_Yaw", 0);
+//        while(true)
+//        {
+//            float CAM_PosX, CAM_PosY, CAM_PosZ, CAM_OrtX, CAM_OrtY, CAM_OrtZ;
+//            float PCL_X, PCL_Y, PCL_Z, PCL_Roll, PCL_Yaw, PCL_Pitch;
+//            ros::param::get("/CAM_PosX", CAM_PosX);
+//            ros::param::get("/CAM_PosY", CAM_PosY);
+//            ros::param::get("/CAM_PosZ", CAM_PosZ);
+//            ros::param::get("/CAM_OrtX", CAM_OrtX);
+//            ros::param::get("/CAM_OrtY", CAM_OrtY);
+//            ros::param::get("/CAM_OrtZ", CAM_OrtZ);
+
+//            ros::param::get("/PCL_X", PCL_X);
+//            ros::param::get("/PCL_Y", PCL_Y);
+//            ros::param::get("/PCL_Z", PCL_Z);
+//            ros::param::get("/PCL_Roll", PCL_Roll);
+//            ros::param::get("/PCL_Pitch", PCL_Pitch);
+//            ros::param::get("/PCL_Yaw", PCL_Yaw);
+//            first = false;
+
+//            rvec = (cv::Mat_<double>(3,3) << cos(PCL_Yaw * PI / 180.0), (sin(PCL_Yaw * PI / 180.0)), 0, -(sin(PCL_Yaw * PI / 180.0)), cos(PCL_Yaw * PI / 180.0), 0, 0, 0, 1);
+//            cv::Mat tvec = (cv::Mat_<double>(3,1) << -sY+PCL_Y, -sZ+PCL_Z, sX+PCL_X);
+
+//            image_points.clear();
+//            cv::projectPoints(cloud_Vec, rvec /*cv::Mat::eye(3, 3, CV_64F)*/, tvec, CamA, /*cv::noArray()*/distCoeffs, image_points);
+
+//            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_rgb(new pcl::PointCloud<pcl::PointXYZRGB>);
+//            for (std::size_t i = 0; i < cloud->points.size (); ++i)
+//            {
+//                pcl::PointXYZRGB p;
+//                p.x = cloud->points[i].x;
+//                p.y = cloud->points[i].y;
+//                p.z = cloud->points[i].z;
+//                cv::Vec3b bgr = latest_img.at<cv::Vec3b>(image_points[i].y, image_points[i].x);
+//                //(int)bgr[1];
+//                p.r = ((int)bgr[1])/12*255;
+//                p.g = ((int)bgr[1])/12*255;
+//                p.b = ((int)bgr[1])/12*255;
+////                p.r = getR(image_points[i].x, image_points[i].y);
+////                p.g = getG(image_points[i].x, image_points[i].y);
+////                p.b = getB(image_points[i].x, image_points[i].y);
+//                cloud_rgb->points.push_back(p);
+//            }
+//            // Display pointcloud:
+//            pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud_rgb);
+//            viewer.addPointCloud<pcl::PointXYZRGB> (cloud_rgb, rgb, "input_cloud");
+//            viewer.setCameraPosition(CAM_PosX,CAM_PosY,CAM_PosZ,CAM_OrtX,CAM_OrtY,CAM_OrtZ,0);
+
+//            viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "input_cloud");
+//            //viewer.addCoordinateSystem (1.0);
+//            //viewer.initCameraParameters ();
+
+//            viewer.spinOnce();
+//            std::this_thread::sleep_for(std::chrono::seconds(1));
+
+//            viewer.removePointCloud("input_cloud");
+////            float deg;
+////            cout << "Degr around Z:";
+////            cin >> deg;
+////            cout << "Degr around Z: " << deg << std::endl;
+////            rvec = (cv::Mat_<double>(3,3) << cos(deg * PI / 180.0), (sin(deg * PI / 180.0)), 0, -(sin(deg * PI / 180.0)), cos(deg * PI / 180.0), 0, 0, 0, 1);
+
+////            image_points.clear();
+////            cv::projectPoints(cloud_Vec, rvec /*cv::Mat::eye(3, 3, CV_64F)*/, tvec, CamA, /*cv::noArray()*/distCoeffs, image_points);
+
+//        }
+//    }
 }
 
 void veloCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 {
-    //ROS_INFO("Recived new Front-pointCloud!");
+    //ROS_INFO("Recived new pointCloud!");
 
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
     pcl::PCLPointCloud2 pcl_pc2;
@@ -338,31 +492,36 @@ void veloCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 //        cloud->points[i] = transfToCam(cloud->points[i]);
 //    }
 
-    addSegmToCloud(cloud);
+    if (!latest_img.empty())
+    {
+        addSegmToCloud(cloud);
 
-    sensor_msgs::PointCloud2 out_msg;
-    pcl::toROSMsg(*cloud.get(),out_msg );
+        sensor_msgs::PointCloud2 out_msg;
+        pcl::toROSMsg(*cloud.get(),out_msg );
 
-    segmCloud_pub.publish(out_msg);
+        segmCloud_pub.publish(out_msg);
+    }
 }
 
 void imgCallback(const sensor_msgs::ImageConstPtr& data)
 {
     //ROS_INFO("Recived new Image!");
 
-    mtxImg.lock();
+    //mtxImg.lock();
     try
     {
         //cv::resize(cv_bridge::toCvShare(data, "rgb8")->image, latest_img, latest_img.size());
         latest_img = cv_bridge::toCvShare(data, "rgb8")->image;
+        //cv::imshow("latest", latest_img);
+        //cv::waitKey(0);
         //std::cout << latest_img.at<cv::Vec3b>(180, 240) << std::endl;
         //std::cout << std::to_string(latest_img.size().width) << " --- " << std::to_string(latest_img.size().height) << std::endl;
     }
     catch (cv_bridge::Exception& e)
     {
-        ROS_ERROR("Could not convert from '%s' to 'rgb8'.", data->encoding.c_str());
+        ROS_ERROR("Could not convert from '%s' to 'bgr8'.", data->encoding.c_str());
     }
-    mtxImg.unlock();
+    //mtxImg.unlock();
 
 }
 
@@ -373,8 +532,8 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 
     subCroppedCloud = nh.subscribe("/cropped_velodyne_points", 1000, veloCallback);
-    //subImg = nh.subscribe("/img_segm", 1000, imgCallback);
-    subImg = nh.subscribe("/image_publisher_1588246423511424788/image_raw", 1000, imgCallback);
+    subImg = nh.subscribe("/img_obj", 1000, imgCallback);
+    //subImg = nh.subscribe("/static_image/image_raw", 1000, imgCallback);
     segmCloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/segm_velodyne_points", 1000);
 
     ros::spin();

@@ -1,16 +1,30 @@
 <?xml version="1.0"?>
 <launch>
+    <rosparam command="load" file="$(env HOME)/Masterprojekt/src/run_basics/launch/params.yaml" />
+    <arg name="static"      default="0" />
 
+    <group if="$(arg static)">
         <!-- run imager republisher for converting compressed to raw -->
         <node pkg="image_transport" type="republish" name="pup_imgraw"
-              args="compressed in:=/usb_cam/image_raw raw out:=/usb_cam/image_raw/raw" />
+              args="compressed in:=/static_usb_cam/image_raw raw out:=/usb_cam/image_raw/raw" />
+
+        <!-- run cropper for pintcloud data to match size of images -->
+        <node pkg="run_basics" type="cloudCrop" name="cropper"
+              args="-s" />
+    </group>
+
+    <group unless="$(arg static)">
+        <!-- run imager republisher for converting compressed to raw -->
+        <node pkg="image_transport" type="republish" name="pup_imgraw"
+              args="compressed in:=usb_cam/image_raw raw out:=/usb_cam/image_raw/raw" />
 
         <!-- run cropper for pintcloud data to match size of images -->
         <node pkg="run_basics" type="cloudCrop" name="cropper"
               args="" />
+    </group>
 
-        <!-- run rviz -->
-        <node pkg="rviz" type="rviz" name="rviz_gui"
-              args="-d $(env HOME)/Masterprojekt/src/run_basics/rviz/basics.rviz" />
+    <!-- run rviz -->
+    <node pkg="rviz" type="rviz" name="rviz_gui"
+          args="-d $(env HOME)/Masterprojekt/src/run_basics/rviz/basics.rviz" />
 
 </launch>
