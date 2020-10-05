@@ -12,7 +12,7 @@ rospy.init_node('ObjectCalculator', anonymous=True)
 pub = rospy.Publisher("/pcl_segmentation/ObjectList", ObjectList, queue_size=1)
 
 def callbackVelo(data):
-    rospy.loginfo(rospy.get_caller_id() + "Received new PointCloud on /velodyne/front/segm_velodyne_points")
+    #rospy.loginfo(rospy.get_caller_id() + "Received new PointCloud on /velodyne/front/segm_velodyne_points")
 
     pc = ros_numpy.numpify(data)
     #print(data)
@@ -39,64 +39,65 @@ def callbackVelo(data):
         #print(index[0].shape)
         objPoints = points[index]
         #print(objPoints.shape)
+        if (0 < objPoints.shape[0]):
 
-        X = objPoints[:,0]
-        meanX = X.mean()
-        stdevX = X.std()
+            X = objPoints[:,0]
+            meanX = X.mean()
+            stdevX = X.std()
 
-        Y = objPoints[:,1]
-        meanY = Y.mean()
-        stdevY = Y.std()
+            Y = objPoints[:,1]
+            meanY = Y.mean()
+            stdevY = Y.std()
 
-        Z = objPoints[:,2]
-        meanZ = Z.mean()
-        stdevZ = Z.std()
+            Z = objPoints[:,2]
+            meanZ = Z.mean()
+            stdevZ = Z.std()
 
-        #print("X: ", X.max())
-        #print("Y: ", Y.max())
-        #print("Z: ", Z.max())
+            #print("X: ", X.max())
+            #print("Y: ", Y.max())
+            #print("Z: ", Z.max())
 
-        objPoints = objPoints[abs(objPoints[:,0] - meanX) < 2*stdevX]
-        #print(objPoints.shape)
-        objPoints = objPoints[abs(objPoints[:,1] - meanY) < 2*stdevY]
-        #print(objPoints.shape)
-        objPoints = objPoints[abs(objPoints[:,2] - meanZ) < 2*stdevZ]
-        #print(objPoints.shape)
+            objPoints = objPoints[abs(objPoints[:,0] - meanX) < 2*stdevX]
+            #print(objPoints.shape)
+            objPoints = objPoints[abs(objPoints[:,1] - meanY) < 2*stdevY]
+            #print(objPoints.shape)
+            objPoints = objPoints[abs(objPoints[:,2] - meanZ) < 2*stdevZ]
+            #print(objPoints.shape)
 
-        #Dimension calculation
-        X = objPoints[:,0]
-        xMinMaxMean = MinMaxMean()
-        xMinMaxMean.min = X.min()
-        xMinMaxMean.max = X.max()
-        xMinMaxMean.mean = X.mean()
+            #Dimension calculation
+            X = objPoints[:,0]
+            xMinMaxMean = MinMaxMean()
+            xMinMaxMean.min = X.min()
+            xMinMaxMean.max = X.max()
+            xMinMaxMean.mean = X.mean()
 
-        Y = objPoints[:,1]
-        yMinMaxMean = MinMaxMean()
-        yMinMaxMean.min = Y.min()
-        yMinMaxMean.max = Y.max()
-        yMinMaxMean.mean = Y.mean()
+            Y = objPoints[:,1]
+            yMinMaxMean = MinMaxMean()
+            yMinMaxMean.min = Y.min()
+            yMinMaxMean.max = Y.max()
+            yMinMaxMean.mean = Y.mean()
 
-        Z = objPoints[:,2]
-        zMinMaxMean = MinMaxMean()
-        zMinMaxMean.min = Z.min()
-        zMinMaxMean.max = Z.max()
-        zMinMaxMean.mean = Z.mean()
+            Z = objPoints[:,2]
+            zMinMaxMean = MinMaxMean()
+            zMinMaxMean.min = Z.min()
+            zMinMaxMean.max = Z.max()
+            zMinMaxMean.mean = Z.mean()
 
 
-        #Distance calculation
-        dist = np.sqrt(np.power(X, 2)+np.power(Y, 2))
-        distMinMaxMean = MinMaxMean()
-        distMinMaxMean.min = dist.min()
-        distMinMaxMean.max = dist.max()
-        distMinMaxMean.mean = dist.mean()
+            #Distance calculation
+            dist = np.sqrt(np.power(X, 2)+np.power(Y, 2))
+            distMinMaxMean = MinMaxMean()
+            distMinMaxMean.min = dist.min()
+            distMinMaxMean.max = dist.max()
+            distMinMaxMean.mean = dist.mean()
 
-        currentObject = singleObject()
-        currentObject.x = xMinMaxMean
-        currentObject.y = yMinMaxMean
-        currentObject.z = zMinMaxMean
-        currentObject.distance = distMinMaxMean
+            currentObject = singleObject()
+            currentObject.x = xMinMaxMean
+            currentObject.y = yMinMaxMean
+            currentObject.z = zMinMaxMean
+            currentObject.distance = distMinMaxMean
 
-        fullObjectList.ObjectList.append(currentObject)
+            fullObjectList.ObjectList.append(currentObject)
 
     pub.publish(fullObjectList)
 

@@ -34,8 +34,6 @@ ros::Publisher segmCloud_pub;
 cv::Mat latest_img;// = cv::Mat::zeros(540, 960, CV_8UC3);
 std::mutex mtxImg;
 
-// PCL viewer //
-pcl::visualization::PCLVisualizer viewer("PCL Viewer");
 
 int getYID(velodyne_pointcloud::PointXYZIR point)
 {
@@ -381,6 +379,9 @@ void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud)
 //        std::cout << image_points[i].x << " --- " << image_points[i].y << std::endl;
 //        std::cout << "intens: " << std::to_string(bgr[1]) << "---: " << std::to_string(bgr[0]) << "--: " << std::to_string(bgr[2]) << std::endl;
     }
+
+    // PCL viewer //
+    //pcl::visualization::PCLVisualizer viewer("PCL Viewer");
 
 //    static bool first = true;
 //    if (first)

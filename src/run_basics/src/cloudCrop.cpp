@@ -109,6 +109,10 @@ void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
     pcl_conversions::toPCL(*data, pcl_pc2);
     fromPCLPointCloud2(pcl_pc2, *cloud);
 
+    pcl::io::savePCDFileASCII ("/home/micha/Masterprojekt/front_cloud.pcd", *cloud.get());
+    std::cout << "---------------" << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr dataOut( new pcl::PointCloud<velodyne_pointcloud::PointXYZIR> );
 
     pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*TopCloud, *dataOut);
@@ -170,6 +174,10 @@ void veloTopCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
     pcl::PCLPointCloud2 pcl_pc2;
     pcl_conversions::toPCL(*data, pcl_pc2);
     fromPCLPointCloud2(pcl_pc2, *cloud);
+
+    pcl::io::savePCDFileASCII ("/home/micha/Masterprojekt/top_cloud.pcd", *cloud.get());
+    std::cout << "------saved top---------" << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(3));
 
     pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*cloud, *TopCloud);
 }

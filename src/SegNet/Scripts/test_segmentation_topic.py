@@ -94,7 +94,7 @@ def img_callback(data):
     image_message = bridge.cv2_to_imgmsg(segmentation_rgb, encoding="passthrough")
     pub.publish(image_message)
 
-    frame = cv2.resize(frame, (480,270))
+    #frame = cv2.resize(frame, (480,270))
     cv2.imshow("Original", original)
     cv2.imshow("Input", frame)
     cv2.imshow("SegNet", segmentation_rgb)

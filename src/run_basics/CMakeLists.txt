@@ -150,6 +150,14 @@ add_executable(final_visualizer src/final_visualizer.cpp)
 #add_dependencies(final_visualizer ${catkin_LIBRARIES})
 target_link_libraries(final_visualizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
+add_executable(simple_visualizer src/simple_visualizer.cpp)
+#add_dependencies(simple_visualizer ${catkin_LIBRARIES})
+target_link_libraries(simple_visualizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(file_visualizer src/file_visualizer.cpp)
+#add_dependencies(file_visualizer ${catkin_LIBRARIES})
+target_link_libraries(file_visualizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/run_basics.cpp
