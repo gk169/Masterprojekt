@@ -11,6 +11,10 @@
         <!-- run cropper for pintcloud data to match size of images -->
         <node pkg="run_basics" type="cloudCrop" name="cropper"
               args="-s" />
+
+        <!-- run oneStepBag to pulish a static set of topics -->
+        <node pkg="run_basics" type="oneStepBag.py" name="oneStepBag"
+              args="" />
     </group>
 
     <group unless="$(arg static)">
@@ -22,6 +26,22 @@
         <node pkg="run_basics" type="cloudCrop" name="cropper"
               args="" />
     </group>
+
+    <!-- run segm2object to create image with objects and classes for SegNet image -->
+    <node pkg="run_basics" type="segm2object" name="segm2object"
+          args="" />
+
+    <!-- run segm2loud to transform image-information into the PointCloud -->
+    <node pkg="run_basics" type="segm2loud" name="segm2loud"
+          args="" />
+
+    <!-- run ObjectCalculator to calculate Object-information from the PointCloud -->
+    <node pkg="run_basics" type="ObjectCalculator.py" name="ObjectCalculator"
+          args="" />
+
+    <!-- run final_visualizer to show the results -->
+    <node pkg="run_basics" type="final_visualizer" name="final_visualizer"
+          args="" />
 
     <!-- run rviz -->
     <node pkg="rviz" type="rviz" name="rviz_gui"
