@@ -137,8 +137,8 @@ int main(int argc, char **argv)
 
     ros::NodeHandle nh;
 
-    //subImg = nh.subscribe("/img_segm", 1000, imgCallback);
-    subImg = nh.subscribe("/static_image/image_raw", 1000, imgCallback);
+    subImg = nh.subscribe("/img_segm", 1000, imgCallback);
+    //subImg = nh.subscribe("/static_image/image_raw", 1000, imgCallback);
     ObjImg_pub = nh.advertise<sensor_msgs::Image>("/img_obj", 1000);
 
     ros::spin();

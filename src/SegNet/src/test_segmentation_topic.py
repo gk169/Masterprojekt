@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,7 +26,7 @@ parser.add_argument('--model', type=str, required=True)
 parser.add_argument('--weights', type=str, required=True)
 parser.add_argument('--colours', type=str, required=True)
 parser.add_argument('--caffe', type=str, required=True)
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 # Make sure that caffe is on the python path:
 sys.path.insert(0, args.caffe + 'python')
@@ -98,7 +98,7 @@ def img_callback(data):
     end = time.time()
     print '%30s' % 'Processed results in ', str((end - start)*1000), 'ms\n'
 
-    image_message = bridge.cv2_to_imgmsg(segmentation_rgb, encoding="passthrough")
+    image_message = bridge.cv2_to_imgmsg(segmentation_rgb, encoding="bgr8")
     pub.publish(image_message)
 
     #frame = cv2.resize(frame, (480,270))
