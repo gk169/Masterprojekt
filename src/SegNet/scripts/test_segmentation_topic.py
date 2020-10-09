@@ -16,16 +16,21 @@ from cv_bridge import CvBridge, CvBridgeError
 
 sys.path.append('/usr/local/lib/python2.7/site-packages')
 # Make sure that caffe is on the python path:
-caffe_root = '/home/micha/Dokumente/SegNet/caffe-segnet/'
-sys.path.insert(0, caffe_root + 'python')
-import caffe
+#caffe_root = '/home/micha/Dokumente/SegNet/caffe-segnet/'
+#sys.path.insert(0, caffe_root + 'python')
+#import caffe
 
 # Import arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', type=str, required=True)
 parser.add_argument('--weights', type=str, required=True)
 parser.add_argument('--colours', type=str, required=True)
+parser.add_argument('--caffe', type=str, required=True)
 args = parser.parse_args()
+
+# Make sure that caffe is on the python path:
+sys.path.insert(0, args.caffe + 'python')
+import caffe
 
 net = caffe.Net(args.model,
                 args.weights,
