@@ -28,6 +28,13 @@
     </group>
 
     <!-- run segm2object to create image with objects and classes for SegNet image -->
+    <node pkg="SegNet" type="test_segmentation_topic.py" name="test_segmentation_topic"
+          args="--model ./Example_Models/segnet_model_driving_webdemo.prototxt
+                --weights ./Example_Models/segnet_weights_driving_webdemo.caffemodel
+                --colours ./scripts/camvid12.png
+                --caffe $(env HOME)/caffe-segnet/" />
+
+    <!-- run segm2object to create image with objects and classes for SegNet image -->
     <node pkg="run_basics" type="segm2object" name="segm2object"
           args="" />
 
