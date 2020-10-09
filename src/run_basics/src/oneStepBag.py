@@ -35,8 +35,8 @@ def echoTopic():
     msg_cam = None
     for topic, msg, t in bag.read_messages(topics=['/velodyne/front/velodyne_points', '/velodyne/top/velodyne_points', '/velodyne/back/velodyne_points', '/usb_cam/image_raw/compressed', '/usb_cam/camera_info']):
         #print(msg)
-        print(topic)
-        print(t)
+        #print(topic)
+        #print(t)
         if topic == '/velodyne/front/velodyne_points' and x_front < 1250:
             x_front=x_front+1
             msg_front = msg
