@@ -32,6 +32,8 @@ args, unknown = parser.parse_known_args()
 sys.path.insert(0, args.caffe + 'python')
 import caffe
 
+caffe.set_mode_gpu()
+
 net = caffe.Net(args.model,
                 args.weights,
                 caffe.TEST)
