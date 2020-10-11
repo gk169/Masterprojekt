@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-    <rosparam command="load" file="$(env HOME)/Masterprojekt/src/run_basics/launch/params.yaml" />
+    <rosparam command="load" file="$(env HOME)/Git/Masterprojekt/src/run_basics/launch/params.yaml" />
     <arg name="static"      default="0" />
 
     <group if="$(arg static)">
@@ -29,17 +29,17 @@
 
     <!-- run segm2object to create image with objects and classes for SegNet image -->
     <node pkg="SegNet" type="test_segmentation_topic.py" name="test_segmentation_topic"
-          args="--model ./Example_Models/segnet_model_driving_webdemo.prototxt
-                --weights ./Example_Models/segnet_weights_driving_webdemo.caffemodel
-                --colours ./scripts/camvid12.png
+          args="--model $(env HOME)/Git/Masterprojekt/src/SegNet/Example_Models/segnet_model_driving_webdemo.prototxt
+                --weights $(env HOME)/Git/Masterprojekt/src/SegNet/Example_Models/segnet_weights_driving_webdemo.caffemodel
+                --colours $(env HOME)/Git/Masterprojekt/src/SegNet/src/camvid12.png
                 --caffe $(env HOME)/caffe-segnet/" />
 
     <!-- run segm2object to create image with objects and classes for SegNet image -->
     <node pkg="run_basics" type="segm2object" name="segm2object"
           args="" />
 
-    <!-- run segm2loud to transform image-information into the PointCloud -->
-    <node pkg="run_basics" type="segm2loud" name="segm2loud"
+    <!-- run segm2cloud to transform image-information into the PointCloud -->
+    <node pkg="run_basics" type="segm2cloud" name="segm2cloud"
           args="" />
 
     <!-- run ObjectCalculator to calculate Object-information from the PointCloud -->
@@ -51,7 +51,8 @@
           args="" />
 
     <!-- run rviz -->
+    <!--
     <node pkg="rviz" type="rviz" name="rviz_gui"
           args="-d $(env HOME)/Masterprojekt/src/run_basics/rviz/basics.rviz" />
-
+    -->
 </launch>
