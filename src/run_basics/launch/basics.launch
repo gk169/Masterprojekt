@@ -1,53 +1,37 @@
 <?xml version="1.0"?>
 <launch>
     <rosparam command="load" file="$(env HOME)/Git/Masterprojekt/src/run_basics/launch/params.yaml" />
-    <arg name="static"      default="0" />
 
-    <group if="$(arg static)">
-        <!-- run imager republisher for converting compressed to raw -->
-        <node pkg="image_transport" type="republish" name="pup_imgraw"
-              args="compressed in:=/static_usb_cam/image_raw raw out:=/usb_cam/image_raw/raw" />
 
-        <!-- run cropper for pintcloud data to match size of images -->
-        <node pkg="run_basics" type="cloudCrop" name="cropper"
-              args="-s" />
+    <!-- run cropper for pintcloud data to match size of images -->
+    <node pkg="run_basics" type="Synchronizer" name="Synchronizer" output="screen"
+          args="" />
 
-        <!-- run oneStepBag to pulish a static set of topics -->
-        <node pkg="run_basics" type="oneStepBag.py" name="oneStepBag"
-              args="" />
-    </group>
+    <!-- run imager republisher for converting compressed to raw -->
+    <node pkg="image_transport" type="republish" name="pup_imgraw"
+          args="compressed in:=/BugaSegm/synchronized/usb_cam/image_raw raw out:=/BugaSegm/img_raw" />
 
-    <group unless="$(arg static)">
-        <!-- run imager republisher for converting compressed to raw -->
-        <node pkg="image_transport" type="republish" name="pup_imgraw"
-              args="compressed in:=usb_cam/image_raw raw out:=/usb_cam/image_raw/raw" />
-
-        <!-- run cropper for pintcloud data to match size of images -->
-        <node pkg="run_basics" type="cloudCrop" name="cropper"
-              args="" />
-    </group>
+    <!-- run cropper for pintcloud data to match size of images -->
+    <node pkg="run_basics" type="PcPreprocess" name="PcPreprocess" output="screen"
+          args="" />
 
     <!-- run segm2object to create image with objects and classes for SegNet image -->
-    <node pkg="SegNet" type="test_segmentation_topic.py" name="test_segmentation_topic"
+    <node pkg="SegNet" type="SegNet.py" name="SegNet" output="screen"
           args="--model $(env HOME)/Git/Masterprojekt/src/SegNet/Example_Models/segnet_model_driving_webdemo.prototxt
                 --weights $(env HOME)/Git/Masterprojekt/src/SegNet/Example_Models/segnet_weights_driving_webdemo.caffemodel
                 --colours $(env HOME)/Git/Masterprojekt/src/SegNet/src/camvid12.png
                 --caffe $(env HOME)/caffe-segnet/" />
 
     <!-- run segm2object to create image with objects and classes for SegNet image -->
-    <node pkg="run_basics" type="segm2object" name="segm2object"
-          args="" />
-
-    <!-- run segm2cloud to transform image-information into the PointCloud -->
-    <node pkg="run_basics" type="segm2cloud" name="segm2cloud"
+    <node pkg="run_basics" type="Combinator" name="Combinator" output="screen"
           args="" />
 
     <!-- run ObjectCalculator to calculate Object-information from the PointCloud -->
-    <node pkg="run_basics" type="ObjectCalculator.py" name="ObjectCalculator"
+    <node pkg="run_basics" type="ObjectCalculator.py" name="ObjectCalculator" output="screen"
           args="" />
 
     <!-- run final_visualizer to show the results -->
-    <node pkg="run_basics" type="final_visualizer" name="final_visualizer"
+    <node pkg="run_basics" type="FinalVisualizer" name="FinalVisualizer" output="screen"
           args="" />
 
     <!-- run rviz -->

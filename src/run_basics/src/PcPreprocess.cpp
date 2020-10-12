@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include "sensor_msgs/PointCloud2.h"
+#include "std_msgs/Header.h"
 #include <thread>
 #include <chrono>
 #include <pcl_conversions/pcl_conversions.h>
@@ -104,6 +105,8 @@ void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 {
     ROS_INFO("Recived new Front-pointCloud!");
 
+    std_msgs::Header header = data->header;
+
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
     pcl::PCLPointCloud2 pcl_pc2;
     pcl_conversions::toPCL(*data, pcl_pc2);
@@ -162,6 +165,7 @@ void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 //    sensor_msgs::PointCloud2 organized_out_msg;
 //    pcl::toROSMsg(*pcl_organized.get(),organized_out_msg );
 
+    out_msg.header=header;
     croppedCloud_pub.publish(out_msg);
     //croppedCloud_pub.publish(organized_out_msg);
 }
@@ -184,40 +188,13 @@ void veloTopCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 
 int main(int argc, char **argv)
 {
-    bool use_static = false;
-    int c;
-    while ((c = getopt (argc, argv, "s")) != -1)
-    {
-        switch (c)
-        {
-        case 's':
-        {
-            ROS_INFO("-s specifies. Using static topics!");
-            use_static = true;
-            break;
-        }
-        default:
-        {
-            break;
-        }
-        }
-    }
-
-    ros::init(argc, argv, "cloudCrop");
+    ros::init(argc, argv, "PcPreprocess");
 
     ros::NodeHandle nh;
 
-    if(use_static)
-    {
-        subVeloFront = nh.subscribe("/static_points_front", 1000, veloFrontCallback);
-        subVeloTop = nh.subscribe("/static_points_top", 1000, veloTopCallback);
-    }
-    else
-    {
-        subVeloFront = nh.subscribe("/velodyne/front/velodyne_points", 1000, veloFrontCallback);
-        subVeloTop = nh.subscribe("/velodyne/top/velodyne_points", 1000, veloTopCallback);
-    }
-    croppedCloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/cropped_velodyne_points", 1000);
+    subVeloFront = nh.subscribe("/BugaSegm/synchronized/velodyne/front/velodyne_points", 1000, veloFrontCallback);
+    subVeloTop = nh.subscribe("/BugaSegm/synchronized/velodyne/top/velodyne_points", 1000, veloTopCallback);
+    croppedCloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/BugaSegm/pc_preprocessed", 1000);
 
     ros::spin();
 

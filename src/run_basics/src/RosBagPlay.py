@@ -9,12 +9,12 @@ import rosbag
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-rospy.init_node('oneStepbag', anonymous=True)
-pub_front = rospy.Publisher('/static_points_front', PointCloud2, queue_size=10)
-pub_top = rospy.Publisher('/static_points_top', PointCloud2, queue_size=10)
-pub_back = rospy.Publisher('/static_points_back', PointCloud2, queue_size=10)
-pub_img = rospy.Publisher('/static_usb_cam/image_raw/compressed', CompressedImage, queue_size=10)
-pub_cam = rospy.Publisher('/static_usb_cam/camera_info', CameraInfo, queue_size=10)
+rospy.init_node('RosBagPlay', anonymous=True)
+pub_front = rospy.Publisher('/velodyne/front/velodyne_points', PointCloud2, queue_size=10)
+pub_top = rospy.Publisher('/velodyne/top/velodyne_points', PointCloud2, queue_size=10)
+pub_back = rospy.Publisher('/velodyne/back/velodyne_points', PointCloud2, queue_size=10)
+pub_img = rospy.Publisher('/usb_cam/image_raw/compressed', CompressedImage, queue_size=10)
+pub_cam = rospy.Publisher('/usb_cam/camera_info', CameraInfo, queue_size=10)
 
 
 def echoTopic():
@@ -55,12 +55,12 @@ def echoTopic():
         if x_front==x_top==x_back==x_img==x_cam==1250:
             break
 
-    print("publishing in")
-    print("/velodyne/front/velodyne_points --> /static_points_front")
-    print("/velodyne/top/velodyne_points --> /static_points_top")
-    print("/velodyne/back/velodyne_points --> /static_points_back")
-    print("/usb_cam/image_raw/compressed --> /static_usb_cam/image_raw/compressed")
-    print("/usb_cam/camera_info --> /static_usb_cam/camera_info")
+    print("publishing")
+    print("/velodyne/front/velodyne_points")
+    print("/velodyne/top/velodyne_points")
+    print("/velodyne/back/velodyne_points")
+    print("/usb_cam/image_raw/compressed")
+    print("/usb_cam/camera_info")
     rate = rospy.Rate(100) # 10hz
     while not rospy.is_shutdown():
         pub_front.publish(msg_front)

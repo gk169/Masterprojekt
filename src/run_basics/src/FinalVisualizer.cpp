@@ -62,12 +62,13 @@ void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
     viewer.setCameraPosition(CAM_PosX,CAM_PosY,CAM_PosZ,CAM_OrtX,CAM_OrtY,CAM_OrtZ,0);
     //viewer.setCameraPosition(-4.5, 0, 0.86, 0, 0, 1, 0);
 
-    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "input_cloud");
+    //viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "input_cloud");
     //viewer.addCoordinateSystem (1.0);
     //viewer.initCameraParameters ();
 
     if (nullptr != fullObjectList)
     {
+	ROS_INFO("ObjectList not NULL!");
         int num = 1;
         for (auto& obj:fullObjectList->ObjectList)
         {
@@ -85,7 +86,8 @@ void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
             num++;
         }
 
-        viewer.spin();
+        viewer.spinOnce();
+        //std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
    // viewer.spin();
@@ -94,7 +96,7 @@ void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 
 void objCallback(const run_basics::ObjectList::ConstPtr& data)
 {
-    //ROS_INFO("Recived new ObjectList!");
+    ROS_INFO("Recived new ObjectList!");
 
     fullObjectList = data;
 
@@ -102,12 +104,12 @@ void objCallback(const run_basics::ObjectList::ConstPtr& data)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "final_visualizer");
+    ros::init(argc, argv, "FinalVisualizer");
 
     ros::NodeHandle nh;
 
-    subCloud = nh.subscribe("/segm_velodyne_points", 1000, cloudCallback);
-    subObjects = nh.subscribe("/pcl_segmentation/ObjectList", 1000, objCallback);
+    subCloud = nh.subscribe("/BugaSegm/pc_segmented", 1, cloudCallback);
+    subObjects = nh.subscribe("/BugaSegm/objectlist", 1, objCallback);
 
     ros::spin();
 

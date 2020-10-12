@@ -8,13 +8,26 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_types.h>
+#include <pcl/PCLPointCloud2.h>
+#include <pcl/conversions.h>
+#include <pcl_ros/transforms.h>
 
+#include "../include/run_basics/organize_velodyne_cloud.h"
+
+#define PI 3.14159265
+
+ros::Subscriber subCroppedCloud;
 ros::Subscriber subImg;
-ros::Publisher ObjImg_pub;
+//ros::Publisher ObjImg_pub;
+ros::Publisher segmCloud_pub;
+
+cv::Mat fullObjects;
 
 void imgCallback(const sensor_msgs::ImageConstPtr& data)
 {
-    ROS_INFO("Recived new Image!");
+    //ROS_INFO("Recived new Image!");
 
     cv::Mat latest_img;
     try
@@ -76,7 +89,7 @@ void imgCallback(const sensor_msgs::ImageConstPtr& data)
     double minArea = 90;
     int objectNum = 1;
     int classNum = 0;
-    cv::Mat fullObjects = cv::Mat::zeros(latest_img.rows, latest_img.cols, CV_8UC3);
+    fullObjects = cv::Mat::zeros(latest_img.rows, latest_img.cols, CV_8UC3);
     for (auto& mask : maskBGR)
     {
         if (classNum<numOfObjectClasses)
@@ -121,25 +134,108 @@ void imgCallback(const sensor_msgs::ImageConstPtr& data)
         classNum++;
     }
 
-    cv_bridge::CvImage cv_imageBr;
-    cv_imageBr.image = fullObjects;
-    cv_imageBr.encoding = "bgr8";
-    ObjImg_pub.publish(cv_imageBr.toImageMsg());
+    //cv_bridge::CvImage cv_imageBr;
+    //cv_imageBr.image = fullObjects;
+    //cv_imageBr.encoding = "bgr8";
+    //ObjImg_pub.publish(cv_imageBr.toImageMsg());
 
     //cv::imshow("latest_img", latest_img);
     //cv::imshow("fullObjects", fullObjects);
     //cv::waitKey(0);
+
+    
+
+}
+
+void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud)
+{
+    double fWidth_px = 1157.519519/4; //1139.081372/4;
+    double fHeight_px = 1158.977934/4; //1140.301608/4;
+    double principal_x = 931.165229/4; //932.960706/4;
+    double principal_y = 529.569982/4; //513.207084/4;
+
+    cv::Mat CamA = (cv::Mat_<double>(3,3) << fWidth_px, 0, principal_x, 0, fHeight_px, principal_y, 0, 0, 1);
+
+    float PCL_X, PCL_Y, PCL_Z, PCL_Roll, PCL_Yaw, PCL_Pitch;
+    ros::param::get("/PCL_X", PCL_X);
+    ros::param::get("/PCL_Y", PCL_Y);
+    ros::param::get("/PCL_Z", PCL_Z);
+    ros::param::get("/PCL_Roll", PCL_Roll);
+    ros::param::get("/PCL_Pitch", PCL_Pitch);
+    ros::param::get("/PCL_Yaw", PCL_Yaw);
+    float sX = -0.95; //Distance Camera System to Top Lidar System! -0.95, 0, 0.53
+    float sY = 0;
+    float sZ = 0.53;
+
+    cv::Mat rvec = (cv::Mat_<double>(3,3) << cos(PCL_Yaw * PI / 180.0), 0, -(sin(PCL_Yaw * PI / 180.0)), 0, 1, 0, (sin(PCL_Yaw * PI / 180.0)), 0, cos(PCL_Yaw * PI / 180.0));
+    cv::Mat tvec = (cv::Mat_<double>(3,1) << -sY+PCL_Y, -sZ+PCL_Z, sX+PCL_X);
+
+    vector<cv::Point3f> cloud_Vec;
+    for (std::size_t i = 0; i < cloud->points.size (); ++i)
+    {
+        cloud_Vec.push_back(cv::Point3f(-(cloud->points[i].y),-(cloud->points[i].z),cloud->points[i].x));
+    }
+
+    cv::Mat distCoeffs(5,1,cv::DataType<double>::type);
+    distCoeffs.at<double>(0) = 0.050773; //0.056972;
+    distCoeffs.at<double>(1) = -0.106031; //-0.114493;
+    distCoeffs.at<double>(2) = -0.001663; //-0.001890;
+    distCoeffs.at<double>(3) = 0.000080; //-0.002819;
+    distCoeffs.at<double>(4) = 0;
+
+    vector<cv::Point2f> image_points;
+    cv::projectPoints(cloud_Vec, rvec, tvec, CamA, distCoeffs, image_points);
+
+    for (std::size_t i = 0; i < cloud->points.size (); ++i)
+    {
+        int x = (int)round(image_points[i].x);
+        int y = (int)round(image_points[i].y);
+
+        if (0>x || 480<x || 0>y || 270<y)
+        {
+            cloud->points[i].ring = 0;
+            cloud->points[i].intensity = 12;
+        }
+        else
+        {
+            cv::Vec3b bgr = fullObjects.at<cv::Vec3b>(y, x);
+            cloud->points[i].ring = (int)bgr[0];
+            cloud->points[i].intensity = (int)bgr[1];
+        }
+    }
+}
+
+void veloCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
+{
+    //ROS_INFO("Recived new pointCloud!");
+
+    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
+    pcl::PCLPointCloud2 pcl_pc2;
+    pcl_conversions::toPCL(*data, pcl_pc2);
+    fromPCLPointCloud2(pcl_pc2, *cloud);
+
+    if (!fullObjects.empty())
+    {
+        addSegmToCloud(cloud);
+
+        sensor_msgs::PointCloud2 out_msg;
+        pcl::toROSMsg(*cloud.get(),out_msg );
+
+        segmCloud_pub.publish(out_msg);
+    }
 }
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "segm2object");
+    ros::init(argc, argv, "Combinator");
 
     ros::NodeHandle nh;
 
-    subImg = nh.subscribe("/img_segm", 1000, imgCallback);
+    subImg = nh.subscribe("/BugaSegm/img_segm", 1000, imgCallback);
+    subCroppedCloud = nh.subscribe("/BugaSegm/pc_preprocessed", 1000, veloCallback);
     //subImg = nh.subscribe("/static_image/image_raw", 1000, imgCallback);
-    ObjImg_pub = nh.advertise<sensor_msgs::Image>("/img_obj", 1000);
+    //ObjImg_pub = nh.advertise<sensor_msgs::Image>("/img_obj", 1000);
+    segmCloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/BugaSegm/pc_segmented", 1000);
 
     ros::spin();
 

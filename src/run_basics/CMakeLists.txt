@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   cv_bridge
   message_generation
+  message_filters
 )
 find_package( PCL 1.7 REQUIRED )
 find_package( OpenCV REQUIRED )
@@ -130,33 +131,21 @@ include_directories(
   #${PCL_LIBRARIES}
 )
 
-add_executable(cloudCrop src/cloudCrop.cpp)
+add_executable(Synchronizer src/Synchronizer.cpp)
+#add_dependencies(Synchronizer ${catkin_LIBRARIES})
+target_link_libraries(Synchronizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(PcPreprocess src/PcPreprocess.cpp)
 #add_dependencies(cloudCrop ${catkin_LIBRARIES})
-target_link_libraries(cloudCrop ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(PcPreprocess ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
-add_executable(segm2cloud src/segm2cloud.cpp)
-#add_dependencies(segm2cloud ${catkin_LIBRARIES})
-target_link_libraries(segm2cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS})
+add_executable(Combinator src/Combinator.cpp)
+#add_dependencies(Combinator ${catkin_LIBRARIES})
+target_link_libraries(Combinator ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS})
 
-add_executable(image_publisher src/imagePub.cpp)
-#add_dependencies(image_publisher ${catkin_LIBRARIES})
-target_link_libraries(image_publisher ${catkin_LIBRARIES} ${OpenCV_LIBS})
-
-add_executable(segm2object src/segm2object.cpp)
-#add_dependencies(segm2object ${catkin_LIBRARIES})
-target_link_libraries(segm2object ${catkin_LIBRARIES} ${OpenCV_LIBS})
-
-add_executable(final_visualizer src/final_visualizer.cpp)
+add_executable(FinalVisualizer src/FinalVisualizer.cpp)
 #add_dependencies(final_visualizer ${catkin_LIBRARIES})
-target_link_libraries(final_visualizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-
-add_executable(simple_visualizer src/simple_visualizer.cpp)
-#add_dependencies(simple_visualizer ${catkin_LIBRARIES})
-target_link_libraries(simple_visualizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-
-add_executable(file_visualizer src/file_visualizer.cpp)
-#add_dependencies(file_visualizer ${catkin_LIBRARIES})
-target_link_libraries(file_visualizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(FinalVisualizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
