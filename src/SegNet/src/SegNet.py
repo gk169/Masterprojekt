@@ -60,7 +60,7 @@ def img_callback(data):
 
     #cv2.namedWindow("Original")
     #cv2.namedWindow("Input")
-    #cv2.namedWindow("SegNet")
+    cv2.namedWindow("SegNet")
 
     #start = time.time()
     original = cv_image #cv2.imread("/home/micha/SegNet/Pictures/street1.jpg")
@@ -92,7 +92,9 @@ def img_callback(data):
     segmentation_rgb = np.zeros(segmentation_ind_3ch.shape, dtype=np.uint8)
 
     cv2.LUT(segmentation_ind_3ch,label_colours,segmentation_rgb)
-    segmentation_rgb = cv2.resize(segmentation_rgb, (480,270))
+    #Use interpolation=cv2.INTER_NEAREST to obtain an image with no newly generated classes (Interpolation zwischen zwei Klassengrenzen)
+    segmentation_rgb = cv2.resize(segmentation_rgb, (480,270), interpolation=cv2.INTER_NEAREST)
+    segmentation_ind_3ch = cv2.resize(segmentation_ind_3ch, (480,270), interpolation=cv2.INTER_NEAREST)
     #segmentation_rgb = segmentation_rgb.astype(float)/255
     #segmentation_rgb = segmentation_rgb.astype(np.uint8)/255
 
@@ -101,7 +103,7 @@ def img_callback(data):
 
     rospy.loginfo("SegNet - Publishing segm-image")
 
-    image_message = bridge.cv2_to_imgmsg(segmentation_rgb, encoding="bgr8")
+    image_message = bridge.cv2_to_imgmsg(segmentation_ind_3ch, encoding="bgr8")
     image_message.header = img_header
     #print("SegNet - Header:", image_message.header)
     pub.publish(image_message)
@@ -109,9 +111,9 @@ def img_callback(data):
     #frame = cv2.resize(frame, (480,270))
     #cv2.imshow("Original", original)
     #cv2.imshow("Input", frame)
-    #cv2.imshow("SegNet", segmentation_rgb)
+    cv2.imshow("SegNet", segmentation_rgb)
 
-    #key = cv2.waitKey(0)
+    key = cv2.waitKey(1)
 
     #cv2.destroyAllWindows()
 

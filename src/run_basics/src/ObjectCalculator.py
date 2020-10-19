@@ -96,6 +96,7 @@ def callbackVelo(data):
                 currentObject.y = yMinMaxMean
                 currentObject.z = zMinMaxMean
                 currentObject.distance = distMinMaxMean
+                currentObject.classNr = (int)(objPoints[0,3])
 
                 fullObjectList.ObjectList.append(currentObject)
 

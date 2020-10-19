@@ -5,3 +5,5 @@ MinMaxMean y
 MinMaxMean z
 
 MinMaxMean distance
+
+uint8 classNr

@@ -71,7 +71,7 @@ void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud,
         int x = (int)round(image_points[i].x);
         int y = (int)round(image_points[i].y);
 
-        if (0>x || 480<x || 0>y || 270<y)
+        if (0>x || 480<=x || 0>y || 270<=y || cloud->points[i].x < 0)
         {
             cloud->points[i].ring = 0;
             cloud->points[i].intensity = 12;
@@ -98,6 +98,7 @@ void process_topics()
     try
     {
         latest_img = cv_bridge::toCvShare(img_segm, "bgr8")->image;
+	cv::cvtColor(latest_img, latest_img, cv::COLOR_BGR2GRAY);
         //cv::imshow("input_img", latest_img);
         //cv::waitKey(0);
     }
@@ -105,59 +106,32 @@ void process_topics()
     {
         ROS_ERROR("Combinator - Could not convert from '%s' to 'bgr8'.", img_segm->encoding.c_str());
     }
-    unsigned int numOfObjectClasses = 3;
-    std::vector<cv::Vec3b> bgrVals;
-    bgrVals.push_back(cv::Vec3b(0, 64, 64));        //Person
-    bgrVals.push_back(cv::Vec3b(128, 192, 192));    //Pfosten
-    bgrVals.push_back(cv::Vec3b(0, 128, 128));      //Grünzeug
-    bgrVals.push_back(cv::Vec3b(128, 128, 128));
-    bgrVals.push_back(cv::Vec3b(0, 0, 128));
-    bgrVals.push_back(cv::Vec3b(0, 69, 255));
-    bgrVals.push_back(cv::Vec3b(128, 64, 128));
-    bgrVals.push_back(cv::Vec3b(222, 40, 60));
-    bgrVals.push_back(cv::Vec3b(128, 128, 192));
-    bgrVals.push_back(cv::Vec3b(128, 64, 64));
-    bgrVals.push_back(cv::Vec3b(128, 0, 64));
-    bgrVals.push_back(cv::Vec3b(192, 128, 0));
 
-    int thresh = 1;
-    std::vector<cv::Mat> maskBGR;
-    //std::vector<cv::Mat> resultBGR;
-    for (auto& val : bgrVals)
+    std::vector<cv::Mat> maskClass;
+    for (uint8_t i=0; i<12; i++)
     {
-        //std::cout << std::to_string(val.val[0]) << " " << std::to_string(val.val[1]) << " " << std::to_string(val.val[2]) <<std::endl;
-        cv::Scalar minBGR = cv::Scalar(val.val[0] - thresh, val.val[1] - thresh, val.val[2] - thresh);
+        cv::Mat mask = cv::Mat::zeros(latest_img.rows, latest_img.cols, CV_8UC1);
+        cv::Mat i_mask = cv::Mat(latest_img.rows, latest_img.cols, CV_8UC1, cv::Scalar(i));
 
-        cv::Scalar maxBGR = cv::Scalar(val.val[0] + thresh, val.val[1] + thresh, val.val[2] + thresh);
-
-        cv::Mat mask;
-        //cv::Mat result;
-
-        cv::inRange(latest_img, minBGR, maxBGR, mask);
-        maskBGR.push_back(mask);
-
-        //cv::bitwise_and(latest_img, latest_img, result, mask);
+        cv::compare(latest_img, i_mask, mask, cv::CMP_EQ);
+	maskClass.push_back(mask);
         //cv::imshow("input_img", latest_img);
-        //cv::imshow("mask", mask);
+        //cv::imshow("mask"+std::to_string(i), 255*mask);
         //cv::imshow("result", result);
         //cv::waitKey(5000);
     }
 
-    //Show masks for Debug
-//    int i = 1;
-//    for (auto& val : maskBGR)
-//    {
-//        cv::imshow(std::string("mask"+std::to_string(i)), val);
-//        i++;
-//    }
+        //cv::waitKey(0);
 
+    std::vector<std::string> classes_strings {"Sky", "Building", "Pole", "Roadmarking", "Road", "Pavement", "Tree", "Sign-Symbol", "Fence", "Vehicle", "Pedestrian", "Bike"};
+    std::vector<uint8_t> relevant_classes {2,7,10,11};
     double minArea = 90;
     int objectNum = 1;
     int classNum = 0;
     cv::Mat fullObjects = cv::Mat::zeros(latest_img.rows, latest_img.cols, CV_8UC3);
-    for (auto& mask : maskBGR)
+    for (auto& mask : maskClass)
     {
-        if (classNum<numOfObjectClasses)
+        if (std::find(relevant_classes.begin(), relevant_classes.end(), classNum) != relevant_classes.end())
         {
             std::vector<std::vector<cv::Point>> AllContoursInObject;
             std::vector<cv::Vec4i> HierarchyOfAllContoursInObject;
