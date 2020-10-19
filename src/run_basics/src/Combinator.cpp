@@ -1,5 +1,6 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
+#include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/PointCloud2.h"
@@ -22,6 +23,9 @@ using namespace sensor_msgs;
 using namespace message_filters;
 
 ros::Publisher segmCloud_pub;
+
+ImageConstPtr img_segm;
+PointCloud2::ConstPtr pc_preprocessed;
 
 void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud, cv::Mat fullObjects)
 {
@@ -81,10 +85,14 @@ void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud,
     }
 }
 
-void callback(const ImageConstPtr& img_segm, const PointCloud2::ConstPtr& pc_preprocessed)
+void process_topics()
 {
-  // Solve all of perception here...
-  ROS_INFO("Sync_Callback Combinator");
+  if (nullptr == img_segm || nullptr == pc_preprocessed)
+  {
+    return;
+  }
+
+  ROS_INFO("Combinator - Both received, starting processing");
 
   cv::Mat latest_img;
     try
@@ -95,7 +103,7 @@ void callback(const ImageConstPtr& img_segm, const PointCloud2::ConstPtr& pc_pre
     }
     catch (cv_bridge::Exception& e)
     {
-        ROS_ERROR("Could not convert from '%s' to 'bgr8'.", img_segm->encoding.c_str());
+        ROS_ERROR("Combinator - Could not convert from '%s' to 'bgr8'.", img_segm->encoding.c_str());
     }
     unsigned int numOfObjectClasses = 3;
     std::vector<cv::Vec3b> bgrVals;
@@ -203,8 +211,29 @@ void callback(const ImageConstPtr& img_segm, const PointCloud2::ConstPtr& pc_pre
   sensor_msgs::PointCloud2 out_msg;
   pcl::toROSMsg(*cloud.get(),out_msg );
 
+  img_segm = nullptr;
+  pc_preprocessed = nullptr;
+
   segmCloud_pub.publish(out_msg);
 
+}
+
+void ImgCallback(const ImageConstPtr& img_segm_in)
+{
+  ROS_INFO("Combinator - Received new Image in single CB");
+
+  img_segm = img_segm_in;
+
+  process_topics();
+}
+
+void PcCallback(const PointCloud2::ConstPtr& pc_in)
+{
+  ROS_INFO("Combinator - Received new PC in single CB");
+
+  pc_preprocessed = pc_in;
+
+  process_topics();
 }
 
 int main(int argc, char** argv)
@@ -216,15 +245,12 @@ int main(int argc, char** argv)
 
 
   ros::NodeHandle nh;
-  message_filters::Subscriber<Image> img_segm_sub(nh, img_segm_topic, 100);
-  message_filters::Subscriber<PointCloud2> pc_preprocessed_sub(nh, pc_preprocessed_topic, 100);
 
   segmCloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/BugaSegm/pc_segmented", 1000);
 
-  typedef sync_policies::ApproximateTime<Image, PointCloud2> MySyncPolicy;
-  // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-  Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), img_segm_sub, pc_preprocessed_sub);
-  sync.registerCallback(boost::bind(&callback, _1, _2));
+  //TimeSynchronizer not applicable because this needs more than one message for each topic!
+  ros::Subscriber subImage = nh.subscribe(img_segm_topic, 1000, ImgCallback);
+  ros::Subscriber subPc = nh.subscribe(pc_preprocessed_topic, 1000, PcCallback);
 
   ros::spin();
 

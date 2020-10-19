@@ -12,7 +12,7 @@ rospy.init_node('ObjectCalculator', anonymous=True)
 pub = rospy.Publisher("/BugaSegm/objectlist", ObjectList, queue_size=1)
 
 def callbackVelo(data):
-    #rospy.loginfo(rospy.get_caller_id() + "Received new PointCloud on /velodyne/front/segm_velodyne_points")
+    rospy.loginfo("ObjectCalculator - Received new PointCloud on /velodyne/front/segm_velodyne_points")
 
     pc = ros_numpy.numpify(data)
     #print(data)
@@ -101,6 +101,7 @@ def callbackVelo(data):
 
     pub.publish(fullObjectList)
 
+    rospy.loginfo("ObjectCalculator - Setting SEG_RUNNING to False")
     rospy.set_param('SEG_RUNNING', False)
 
 def listener():

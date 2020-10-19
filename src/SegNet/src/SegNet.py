@@ -44,9 +44,11 @@ label_colours = cv2.imread(args.colours).astype(np.uint8)
 bridge = CvBridge()
 
 #publisher for segmentation image
-pub = rospy.Publisher('/BugaSegm/img_segm', Image, queue_size=10)
+pub = rospy.Publisher('/BugaSegm/img_segm', Image, queue_size=1000)
 
 def img_callback(data):
+    
+    rospy.loginfo("SegNet - Received new image")
 
     img_header = data.header
     
@@ -97,8 +99,11 @@ def img_callback(data):
     #end = time.time()
     #print '%30s' % 'Processed results in ', str((end - start)*1000), 'ms\n'
 
+    rospy.loginfo("SegNet - Publishing segm-image")
+
     image_message = bridge.cv2_to_imgmsg(segmentation_rgb, encoding="bgr8")
     image_message.header = img_header
+    #print("SegNet - Header:", image_message.header)
     pub.publish(image_message)
 
     #frame = cv2.resize(frame, (480,270))

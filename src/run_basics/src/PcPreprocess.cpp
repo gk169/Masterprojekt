@@ -16,6 +16,10 @@
 
 #include "../include/run_basics/organize_velodyne_cloud.h"
 
+//    pcl::io::savePCDFileASCII ("/home/micha/Masterprojekt/cropped_cloud.pcd", *dataOut.get());
+//    std::cout << "---------------" << std::endl;
+//    std::this_thread::sleep_for(std::chrono::seconds(3));
+
 //typedef pcl::PointXYZ PointType;
 #define PI 3.14159265
 
@@ -23,7 +27,9 @@ ros::Subscriber subVeloFront;
 ros::Subscriber subVeloTop;
 ros::Publisher croppedCloud_pub;
 
-pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr TopCloud( new pcl::PointCloud<velodyne_pointcloud::PointXYZIR> );
+pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr FrontCloud;
+pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr TopCloud;
+std_msgs::Header header;
 
 bool getInAngle(velodyne_pointcloud::PointXYZIR point/*, bool front*/)
 {
@@ -54,13 +60,6 @@ bool getInAngle(velodyne_pointcloud::PointXYZIR point/*, bool front*/)
 
     float rangeY = tanWidth*dX;
     float rangeZ = tanHeight*dX;
-
-//    std::cout << "rangeY=" << rangeY << std::endl;
-//    std::cout << "rangeZ=" << rangeZ << std::endl;
-
-//    std::cout << "dX=" << dX << std::endl;
-//    std::cout << "dY=" << dY << std::endl;
-//    std::cout << "dZ=" << dZ << std::endl;
 
     //check width
     if (!(abs(dY) <= rangeY))
@@ -101,24 +100,18 @@ velodyne_pointcloud::PointXYZIR transformFrontToTopVelo(velodyne_pointcloud::Poi
     return ret_point;
 }
 
-void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
+void process_topics()
 {
-    ROS_INFO("Recived new Front-pointCloud!");
+    if(nullptr == FrontCloud || nullptr == TopCloud)
+    {
+        return;
+    }
 
-    std_msgs::Header header = data->header;
-
-    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
-    pcl::PCLPointCloud2 pcl_pc2;
-    pcl_conversions::toPCL(*data, pcl_pc2);
-    fromPCLPointCloud2(pcl_pc2, *cloud);
-
-    //pcl::io::savePCDFileASCII ("/home/segmentation/Git/Masterprojekt/front_cloud.pcd", *cloud.get());
-    //std::cout << "---------------" << std::endl;
-    //std::this_thread::sleep_for(std::chrono::seconds(3));
+    ROS_INFO("PcPreprocess - Both topics received, start processing!");
 
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr dataOut( new pcl::PointCloud<velodyne_pointcloud::PointXYZIR> );
 
-    pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*TopCloud, *dataOut);
+    //pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*TopCloud, *dataOut);
 
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr fullCloud( new pcl::PointCloud<velodyne_pointcloud::PointXYZIR> );
 
@@ -126,9 +119,9 @@ void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
     pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*TopCloud, *fullCloud);
 
     //add front points to pointcloud
-    for (std::size_t i = 0; i < cloud->points.size (); ++i)
+    for (std::size_t i = 0; i < FrontCloud->points.size (); ++i)
     {
-        fullCloud->points.push_back(transformFrontToTopVelo(cloud->points[i]));
+        fullCloud->points.push_back(transformFrontToTopVelo(FrontCloud->points[i]));
     }
 
     dataOut->width = 0;
@@ -143,47 +136,47 @@ void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
             dataOut->width = dataOut->width+1;
         }
     }
-//    for (std::size_t i = 0; i < TopCloud->points.size (); ++i)
-//    {
-//        if (getInAngle(TopCloud->points[i]))
-//        {
-//            dataOut->points.push_back(TopCloud->points[i]);
-//            dataOut->width = dataOut->width+1;
-//        }
-//    }
-
-//    pcl::io::savePCDFileASCII ("/home/micha/Masterprojekt/cropped_cloud.pcd", *dataOut.get());
-//    std::cout << "---------------" << std::endl;
-//    std::this_thread::sleep_for(std::chrono::seconds(3));
 
     sensor_msgs::PointCloud2 out_msg;
     pcl::toROSMsg(*dataOut.get(),out_msg );
 
-//    pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_organized( new pcl::PointCloud<pcl::PointXYZI> );
-//    OrganizePointCloud<pcl::PointXYZI>(out_msg, *pcl_organized.get(), 16);
-
-//    sensor_msgs::PointCloud2 organized_out_msg;
-//    pcl::toROSMsg(*pcl_organized.get(),organized_out_msg );
-
     out_msg.header=header;
+    ROS_INFO("PcPreprocess - Publishing preprocessed-pointCloud!");
+    //ROS_INFO("PcPreprocess - Header: %d - %d - %d ",out_msg.header.seq, out_msg.header.stamp.sec, out_msg.header.stamp.nsec);
+
+    FrontCloud = nullptr;
+    TopCloud = nullptr;
     croppedCloud_pub.publish(out_msg);
-    //croppedCloud_pub.publish(organized_out_msg);
+}
+
+void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
+{
+    ROS_INFO("PcPreprocess - Recived new Front-pointCloud!");
+
+    header = data->header;
+
+    //convert ROS::PointCloud2 to PCL::PointCloud2
+    pcl::PCLPointCloud2 pcl_pc2;
+    pcl_conversions::toPCL(*data, pcl_pc2);
+    //convert PCL::PointCloud2 to PCL::PointCloud<velodyne_pointcloud::PointXYZIR>
+    FrontCloud = pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
+    fromPCLPointCloud2(pcl_pc2, *FrontCloud);
+
+    process_topics();
 }
 
 void veloTopCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 {
-    ROS_INFO("Recived new Top-pointCloud!");
+    ROS_INFO("PcPreprocess - Recived new Top-pointCloud!");
 
-    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
+    //convert ROS::PointCloud2 to PCL::PointCloud2
     pcl::PCLPointCloud2 pcl_pc2;
     pcl_conversions::toPCL(*data, pcl_pc2);
-    fromPCLPointCloud2(pcl_pc2, *cloud);
+    //convert PCL::PointCloud2 to PCL::PointCloud<velodyne_pointcloud::PointXYZIR>
+    TopCloud = pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
+    fromPCLPointCloud2(pcl_pc2, *TopCloud);
 
-    //pcl::io::savePCDFileASCII ("/home/segmentation/Git/Masterprojekt/top_cloud.pcd", *cloud.get());
-    //std::cout << "------saved top---------" << std::endl;
-    //std::this_thread::sleep_for(std::chrono::seconds(3));
-
-    pcl::copyPointCloud<velodyne_pointcloud::PointXYZIR>(*cloud, *TopCloud);
+    process_topics();
 }
 
 int main(int argc, char **argv)
@@ -197,12 +190,6 @@ int main(int argc, char **argv)
     croppedCloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/BugaSegm/pc_preprocessed", 1000);
 
     ros::spin();
-
-//    while(true)
-//    {
-//        std::this_thread::sleep_for(std::chrono::seconds(10));
-//        ros::spinOnce();
-//    }
 
     return 0;
 }
