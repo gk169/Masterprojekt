@@ -99,7 +99,7 @@ void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 	viewer.setCameraPosition(CAM_PosX,CAM_PosY,CAM_PosZ,CAM_OrtX,CAM_OrtY,CAM_OrtZ,0);
 	//viewer.setCameraPosition(-4.5, 0, 0.86, 0, 0, 1, 0);
 
-	viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "input_cloud");
+	//viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "input_cloud");
 	//viewer.addCoordinateSystem (1.0);
 	//viewer.initCameraParameters ();
 
