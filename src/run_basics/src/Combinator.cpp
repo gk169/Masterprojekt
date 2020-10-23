@@ -56,23 +56,18 @@ void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud,
 		cloud_Vec.push_back(cv::Point3f(-(cloud->points[i].y),-(cloud->points[i].z),cloud->points[i].x));
 	}
 
-	/*cv::Mat distCoeffs(5,1,cv::DataType<double>::type);
-	distCoeffs.at<double>(0) = 0.050773; //0.056972;
-	distCoeffs.at<double>(1) = -0.106031; //-0.114493;
-	distCoeffs.at<double>(2) = -0.001663; //-0.001890;
-	distCoeffs.at<double>(3) = 0.000080; //-0.002819;
-	distCoeffs.at<double>(4) = 0;*/
 	cv::Mat distCoeffs = (cv::Mat_<double>(5,1) << 0.050773, -0.106031, -0.001663, 0.000080, 0);
 	
 	vector<cv::Point2f> image_points;
-	cv::projectPoints(cloud_Vec, rvec, tvec, CamA, cv::Mat(), image_points);
+	cv::projectPoints(cloud_Vec, rvec, tvec, CamA, distCoeffs, image_points);
 
 	for (std::size_t i = 0; i < cloud->points.size (); ++i)
 	{
 		int x = (int)round(image_points[i].x);
 		int y = (int)round(image_points[i].y);
 
-		if (0>x || 480<=x || 0>y || 270<=y || cloud->points[i].x < 0)
+		//Check if: img-coord. are in image; point is ahead of camera; point is not near projection plane (distortion correction causes wrong projection)
+		if (0>x || 480<=x || 0>y || 270<=y || cloud->points[i].x < -sX || abs(cloud->points[i].x/cloud->points[i].y) <= 1|| abs(cloud->points[i].x/cloud->points[i].z+sZ) <= 1.44)
 		{
 			cloud->points[i].ring = 0;
 			cloud->points[i].intensity = 12;
