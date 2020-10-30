@@ -30,6 +30,9 @@ def callbackVelo(data):
     #print(points[:,3].max()) #class
     #print(points[:,4].max()) #object
 
+    # filter points if distance > 20 meter, dont use them for other calculations anymore
+    points = points[points[:,0] < 20]
+
     maxObj = (int)(points[:,4].max())
 
     fullObjectList = ObjectList()
@@ -39,57 +42,60 @@ def callbackVelo(data):
         #print(index[0].shape)
         objPoints = points[index]
         #print(objPoints.shape)
+
         if (0 < objPoints.shape[0]):
+            # Filter x values with histogram from nearest to peak + 20%
+            Histogram, Bins = np.histogram(objPoints[:,0], bins=10)
+            HighestPeak = np.argmax(Histogram)
+            NrOfBins = 2
+            LowerBoarder = 0#HighestPeak-NrOfBins if HighestPeak-NrOfBins > 0 else 0
+            UpperBoarder = HighestPeak+NrOfBins+1 if HighestPeak+NrOfBins+1 < 10 else 10
+            objPoints = objPoints[objPoints[:,0] > Bins[LowerBoarder]]
+            objPoints = objPoints[objPoints[:,0] < Bins[UpperBoarder]]
 
-            X = objPoints[:,0]
-            meanX = X.mean()
-            stdevX = X.std()
+            # Filter y values with histogram (peak bin + 2 bins lower + 2 bins higher -> range of values = up to 50%, values probably more than 50% (because not equaly distributed)
+            Histogram, Bins = np.histogram(objPoints[:,1], bins=10)
+            HighestPeak = np.argmax(Histogram)
+            NrOfBins = 2
+            LowerBoarder = HighestPeak-NrOfBins if HighestPeak-NrOfBins > 0 else 0
+            UpperBoarder = HighestPeak+NrOfBins+1 if HighestPeak+NrOfBins+1 < 10 else 10
+            objPoints = objPoints[objPoints[:,1] > Bins[LowerBoarder]]
+            objPoints = objPoints[objPoints[:,1] < Bins[UpperBoarder]]
 
-            Y = objPoints[:,1]
-            meanY = Y.mean()
-            stdevY = Y.std()
-
+            # Filter z values with std deviation; include +-2 sigma => 95%
             Z = objPoints[:,2]
-            meanZ = Z.mean()
+            meanZ = np.mean(Z) #Z.mean()
             stdevZ = Z.std()
-
-            #print("X: ", X.max())
-            #print("Y: ", Y.max())
-            #print("Z: ", Z.max())
-
-            objPoints = objPoints[abs(objPoints[:,0] - meanX) < 2*stdevX]
-            #print(objPoints.shape)
-            objPoints = objPoints[abs(objPoints[:,1] - meanY) < 2*stdevY]
-            #print(objPoints.shape)
             objPoints = objPoints[abs(objPoints[:,2] - meanZ) < 2*stdevZ]
+            
             #print(objPoints.shape)
 
             if (0 < objPoints.shape[0]):
 	        #Dimension calculation
                 X = objPoints[:,0]
                 xMinMaxMean = MinMaxMean()
-                xMinMaxMean.min = X.min()
-                xMinMaxMean.max = X.max()
-                xMinMaxMean.mean = X.mean()
+                xMinMaxMean.min = np.min(X)#X.min()
+                xMinMaxMean.max = np.max(X)#X.max()
+                xMinMaxMean.mean = np.mean(X)#X.mean()
 
                 Y = objPoints[:,1]
                 yMinMaxMean = MinMaxMean()
-                yMinMaxMean.min = Y.min()
-                yMinMaxMean.max = Y.max()
-                yMinMaxMean.mean = Y.mean()
+                yMinMaxMean.min = np.min(Y)#Y.min()
+                yMinMaxMean.max = np.max(Y)#Y.max()
+                yMinMaxMean.mean = np.mean(Y)#Y.mean()
 
                 Z = objPoints[:,2]
                 zMinMaxMean = MinMaxMean()
-                zMinMaxMean.min = Z.min()
-                zMinMaxMean.max = Z.max()
-                zMinMaxMean.mean = Z.mean()
+                zMinMaxMean.min = np.min(Z)#Z.min()
+                zMinMaxMean.max = np.max(Z)#Z.max()
+                zMinMaxMean.mean = np.mean(Z)#Z.mean()
 
                 #Distance calculation
                 dist = np.sqrt(np.power(X, 2)+np.power(Y, 2))
                 distMinMaxMean = MinMaxMean()
-                distMinMaxMean.min = dist.min()
-                distMinMaxMean.max = dist.max()
-                distMinMaxMean.mean = dist.mean()
+                distMinMaxMean.min = np.min(dist)#dist.min()
+                distMinMaxMean.max = np.max(dist)#dist.max()
+                distMinMaxMean.mean = np.mean(dist)#dist.mean()
 
                 currentObject = singleObject()
                 currentObject.x = xMinMaxMean
