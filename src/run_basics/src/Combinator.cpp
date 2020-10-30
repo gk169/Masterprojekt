@@ -117,7 +117,7 @@ void process_topics()
 	//cv::waitKey(0);
 
 	std::vector<std::string> classes_strings {"Sky", "Building", "Pole", "Roadmarking", "Road", "Pavement", "Tree", "Sign-Symbol", "Fence", "Vehicle", "Pedestrian", "Bike"};
-	std::vector<uint8_t> relevant_classes {2,7,10,11};
+	std::vector<uint8_t> relevant_classes {2,7,10,11}; //Pole, Tree, Pedestrian, Bike (NOT car -> on Buga area no cars allowed)
 	double minArea = 90;
 	int objectNum = 1;
 	int classNum = 0;
