@@ -100,10 +100,23 @@ plt.imsave('../data/images/BugaLogImage.png', BugaLogImage) #TODO-perhaps remove
 intensity = Prediction
 
 input_cloud = current_sample.squeeze()
-
-#print(input_cloud.shape)
 cloud = input_cloud.copy()
-cloud[:,:,3]=Prediction
+
+#print(cloud.shape)
+#print(Prediction.shape)
+if (args.layers == 'xyzi'):
+    cloud[:,:,3]=Prediction
+elif (args.layers == 'xyzir'):
+    cloud[:,:,3]=Prediction
+elif (args.layers == 'ir'):
+    print("not implemented yet")
+elif (args.layers == 'xyz'):
+    Prediction = np.expand_dims(Prediction, axis=2)
+    cloud = np.append(cloud, Prediction, axis=2).astype(np.float32)
+
+#print(cloud.shape)
+
+#cloud[:,:,3]=Prediction
 #cloud=cloud[:,:,0:4]
 # überprüfen ob 0:4 oder 1:5
 #print(cloud.shape)
