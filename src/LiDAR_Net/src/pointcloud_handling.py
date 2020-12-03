@@ -1,13 +1,20 @@
 import pcl
 import numpy as np
 import tensorflow as tf
+from sensor_msgs.msg import PointCloud2
+import ros_numpy
 
-def getSampleArrayFromPointCloud_pcd (PointCloud, sample_path, sensor_height, layers): #TODO - Sensorhöhe als input_param - Adjust relative to ground
+def getSampleArrayFromPointCloud_pcd_from_file (PointCloud, sample_path, sensor_height, layers): #TODO - Sensorhöhe als input_param - Adjust relative to ground
     # Load point cloud from pcd
     cloud = pcl.load_XYZI(sample_path)
     cloud = cloud.to_array()
+    
+    return getSampleArrayFromPointCloud_pcd (PointCloud, cloud, sensor_height, layers)
+    
+def getSampleArrayFromPointCloud_pcd (PointCloud, cloud, sensor_height, layers):
     # Get points and intensity (remission) from pcd point cloud
     points = cloud[:, 0:3]    # get xyz
+    #points[:, 2] = points[:, 2] + sensor_height
     remissions = cloud[:, 3]/255 #normal remissions
     # Set points and remission to PointCloud
     PointCloud.set_points(points, remissions)
@@ -97,3 +104,20 @@ def getLabelArrayFromPointCloud(PointCloud, label_path, KittiToProject_LUT, maxv
     Labels = np.swapaxes(Labels,0,1)
     Labels = tf.keras.utils.to_categorical(Labels,num_classes=maxvalue+1)
     return Labels
+
+def array_to_PointCloud2(cloud, header):
+    data = np.zeros(cloud.shape[0], dtype=[
+      ('x', np.float32),
+      ('y', np.float32),
+      ('z', np.float32),
+      ('intensity', np.float32)
+    ])
+    data['x'] = cloud[:,0]
+    data['y'] = cloud[:,1]
+    data['z'] = cloud[:,2]
+    data['intensity'] = cloud[:,3]
+    
+    cloud_msg = ros_numpy.msgify(PointCloud2, data)
+    cloud_msg.header = header
+    
+    return cloud_msg

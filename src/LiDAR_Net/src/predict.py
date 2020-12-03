@@ -76,7 +76,7 @@ model.load_weights(args.weights)
 current_pcd_path = args.pcd
 PointCloud = SemLaserScan(20, KittiToColorDict, project=True, W=1440, H=16, fov_up=15, fov_down=-15.0)
 
-current_sample = getSampleArrayFromPointCloud_pcd(PointCloud, current_pcd_path, args.sensor_height, args.layers)
+current_sample = getSampleArrayFromPointCloud_pcd_from_file(PointCloud, current_pcd_path, args.sensor_height, args.layers)
 #print(current_sample.shape)
 #current_sample[:,:,2] = current_sample[:,:,2] -0.4#1.13 #+0.7 #- 1.13
 
@@ -104,9 +104,7 @@ cloud = input_cloud.copy()
 
 #print(cloud.shape)
 #print(Prediction.shape)
-if (args.layers == 'xyzi'):
-    cloud[:,:,3]=Prediction
-elif (args.layers == 'xyzir'):
+if (args.layers == 'xyzi' or args.layers == 'xyzir'):
     cloud[:,:,3]=Prediction
 elif (args.layers == 'ir'):
     print("not implemented yet")

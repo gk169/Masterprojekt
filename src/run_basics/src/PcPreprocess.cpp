@@ -122,7 +122,7 @@ void process_topics()
 {
 	if(nullptr == FrontCloud || nullptr == TopCloud || nullptr == BackCloud) return;
 
-	ROS_INFO("PcPreprocess - Both topics received, start processing!");
+	ROS_INFO("PcPreprocess - All topics received, start processing!");
 
 	pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr dataOut( new pcl::PointCloud<velodyne_pointcloud::PointXYZIR> );
 

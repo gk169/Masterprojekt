@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 import math
 import rospy
@@ -12,7 +12,7 @@ rospy.init_node('ObjectCalculator', anonymous=True)
 pub = rospy.Publisher("/BugaSegm/objectlist", ObjectList, queue_size=1)
 
 def callbackVelo(data):
-    rospy.loginfo("ObjectCalculator - Received new PointCloud on /velodyne/front/segm_velodyne_points")
+    rospy.loginfo("ObjectCalculator - Received new PointCloud on /BugaSegm/pc_segmented")
 
     pc = ros_numpy.numpify(data)
     #print(data)
