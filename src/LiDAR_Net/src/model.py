@@ -171,7 +171,10 @@ def LiDAR_Model(input_layers, output_layers):
     #INPUT_SHAPE = [16,16,5]
 
     K.clear_session()
-
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+    
     input_layer = Input(shape=INPUT_SHAPE)
     x = ResContextBlock(32)(input_layer)
     x = ResContextBlock(32)(x)
