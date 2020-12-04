@@ -1,0 +1,19 @@
+BGR_VALS: [ "128, 128, 128",    #Sky
+            "0, 0, 128",        #Building	
+            "128, 192, 192",    #Pfosten
+            "0, 69, 255",       #Road-Marking
+            "128, 64, 128",     #Road
+            "222, 40, 60",      #Pavement
+            "0, 128, 128",      #Grünzeug
+            "128, 128, 192",    #Sign-Symbol
+            "128, 64, 64",      #Fence
+            "128, 0, 64",       #Vehicle
+            "0, 64, 64",        #Person
+            "192, 128, 0",      #Bike
+            "255, 255, 255",    #Not matched in LIDAR
+            "255, 255, 255",    #Objects LIDAR
+            "255, 255, 255",        #Road LIDAR
+            "128, 64, 128",        #LIDAR Road + SegNet Road -> same as SegNet Road
+            "255, 255, 255",        #LIDAR Road + NOT SegNet Road
+            "128, 64, 128"]        #NOT LIDAR ROAD + SegNet Road -> same as SegNet Road
+# 255, 255, 255 not relevant for this configuration

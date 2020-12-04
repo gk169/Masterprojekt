@@ -98,6 +98,11 @@ def predict():
         
     #print(cloud.shape)
     #print(Prediction.shape)
+        
+    # correct previous offset on z-axis (to kitti coords) to get original z-values
+    front_cloud[:,:,2] = front_cloud[:,:,2] + 1.13
+    top_cloud[:,:,2] = top_cloud[:,:,2] - 0.7
+    back_cloud[:,:,2] = back_cloud[:,:,2] + 1.08
     if (args.layers == 'xyzi' or args.layers == 'xyzir'):
         front_cloud[:,:,3]=front_predict
         top_cloud[:,:,3]=top_predict
@@ -199,7 +204,7 @@ def veloBackCallback(data):
     points[:,3]=pc['intensity']
     PointCloud = SemLaserScan(20, KittiToColorDict, project=True, W=1440, H=16, fov_up=15, fov_down=-15.0)
 
-    back_cloud = getSampleArrayFromPointCloud_pcd(PointCloud, points, 0, args.layers) # TODO - höhe richtig
+    back_cloud = getSampleArrayFromPointCloud_pcd(PointCloud, points, -1.08, args.layers)
     
     predict()
 

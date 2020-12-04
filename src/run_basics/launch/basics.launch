@@ -1,8 +1,10 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="param_file" default="params.yaml" /> 
+    <arg name="view_param_file" default="view_params_camera.yaml" /> 
+    <arg name="rgb_param_file" default="bgr_params_ref.yaml" /> 
 
-    <rosparam command="load" file="$(env HOME)/Git/Masterprojekt/src/run_basics/launch/$(arg param_file)" />
+    <rosparam command="load" file="$(env HOME)/Git/Masterprojekt/src/run_basics/launch/$(arg view_param_file)" />
+    <rosparam command="load" file="$(env HOME)/Git/Masterprojekt/src/run_basics/launch/$(arg rgb_param_file)" />
 
 
     <!-- run cropper for pintcloud data to match size of images -->
@@ -13,19 +15,25 @@
     <node pkg="image_transport" type="republish" name="pup_imgraw"
           args="compressed in:=/BugaSegm/synchronized/usb_cam/image_raw raw out:=/BugaSegm/img_raw" />
 
-    <!-- run cropper for pintcloud data to match size of images -->
-    <node pkg="run_basics" type="PcPreprocess" name="PcPreprocess" output="screen"
+    <!-- run fusion of segmented pc-data -->
+    <node pkg="run_basics" type="PcFusion" name="PcFusion" output="screen"
           args="" />
+    
+    <!-- run LiDAR_Net -->
+    <node pkg="LiDAR_Net" type="predict_node.py" name="LiDAR_Net" output="screen"
+          args="--layers xyzi
+                --weights $(env HOME)/Git/Masterprojekt/src/LiDAR_Net/weights/model_weights_xyzi_16_1024_GroundDetection_Epoch20.h5
+                --yaml $(env HOME)/Git/Masterprojekt/src/LiDAR_Net/config/semantic-kitti_GroundObject.yaml" />
 
-    <!-- run segm2object to create image with objects and classes for SegNet image -->
+    <!-- run SegNet -->
     <node pkg="SegNet" type="SegNet.py" name="SegNet" output="screen"
           args="--model $(env HOME)/Git/Masterprojekt/src/SegNet/Example_Models/segnet_model_driving_webdemo.prototxt
                 --weights $(env HOME)/Git/Masterprojekt/src/SegNet/Example_Models/segnet_weights_driving_webdemo.caffemodel
                 --colours $(env HOME)/Git/Masterprojekt/src/SegNet/src/camvid12.png
                 --caffe $(env HOME)/caffe-segnet/" />
 
-    <!-- run segm2object to create image with objects and classes for SegNet image -->
-    <node pkg="run_basics" type="Combinator" name="Combinator" output="screen"
+    <!-- combine information of segmented image and segmented pc into pc -->
+    <node pkg="run_basics" type="DataFusion" name="DataFusion" output="screen"
           args="" />
 
     <!-- run ObjectCalculator to calculate Object-information from the PointCloud -->
@@ -34,7 +42,7 @@
 
     <!-- run final_visualizer to show the results -->
     <node pkg="run_basics" type="FinalVisualizer" name="FinalVisualizer" output="screen"
-          args="" />
+          args="-t /BugaSegm/pc_combined -s" />
 
     <!-- run rviz -->
     <!--

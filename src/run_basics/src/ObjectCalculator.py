@@ -112,7 +112,7 @@ def callbackVelo(data):
     rospy.set_param('SEG_RUNNING', False)
 
 def listener():
-    rospy.Subscriber("/BugaSegm/pc_segmented", PointCloud2, callbackVelo)
+    rospy.Subscriber("/BugaSegm/pc_combined", PointCloud2, callbackVelo)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()

@@ -35,10 +35,12 @@ float PCL_X, PCL_Y, PCL_Z, PCL_Roll, PCL_Yaw, PCL_Pitch;
 
 // Pointcloud colors
 std::vector<std::vector<int>> bgrVals;
+//std::vector<int> bgrVals;
+bool bigSize = false;
 
 void Visualize()
 {
-	if (nullptr == ObjectList || nullptr == PC_Data) return;
+	//if (nullptr == ObjectList || nullptr == PC_Data) return;
 
 	ROS_INFO("Visualizer - Both received, starting visualization");
 
@@ -67,11 +69,14 @@ void Visualize()
 
 	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(rgb_cloud);
 	
-	viewer.addPointCloud<pcl::PointXYZRGB> (rgb_cloud, rgb, "input_cloud");	
-	//viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "input_cloud");
+	viewer.addPointCloud<pcl::PointXYZRGB> (rgb_cloud, rgb, "input_cloud");
+     if (bigSize)
+     {	
+        	viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "input_cloud");
+     }
 		
 	int num = 1;
-	for (auto& obj : ObjectList->ObjectList)
+	/*for (auto& obj : ObjectList->ObjectList)
 	{
 		float r=(rand()%100)/100.0;
 		float g=(rand()%100)/100.0;
@@ -82,14 +87,7 @@ void Visualize()
 		num++;
 	}
 
-	//viewer.spinOnce();
-	//std::this_thread::sleep_for(std::chrono::seconds(1));
-	
-	viewer.spinOnce();
-	// viewer.spin();
-	//std::this_thread::sleep_for(std::chrono::seconds(1));
-
-	ObjectList = nullptr;
+	ObjectList = nullptr;*/
 	PC_Data = nullptr;
 }
 
@@ -111,13 +109,26 @@ void objCallback(const run_basics::ObjectList::ConstPtr& data)
 	Visualize();
 }
 
+std::vector<int> splitString2int(std::string input)
+{
+	std::istringstream ss(input);
+	std::string token;
+
+	std::vector<int> ret;
+	while(std::getline(ss, token, ' ')) {
+		ret.push_back(stoi(token));
+	}
+
+	return ret;
+}
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "FinalVisualizer");
 
 	ros::NodeHandle nh;
 
-        ros::param::get("/CAM_PosX", CAM_PosX);
+	ros::param::get("/CAM_PosX", CAM_PosX);
 	ros::param::get("/CAM_PosY", CAM_PosY);
 	ros::param::get("/CAM_PosZ", CAM_PosZ);
 	ros::param::get("/CAM_OrtX", CAM_OrtX);
@@ -131,27 +142,53 @@ int main(int argc, char **argv)
 	ros::param::get("/PCL_Pitch", PCL_Pitch);
 	ros::param::get("/PCL_Yaw", PCL_Yaw);
 
-        bgrVals.push_back(std::vector<int>{128, 128, 128});    //Sky
-	bgrVals.push_back(std::vector<int>{0, 0, 128});	    //Building	
-	bgrVals.push_back(std::vector<int>{128, 192, 192});    //Pfosten
-	bgrVals.push_back(std::vector<int>{0, 69, 255});	    //Road-Marking
-	bgrVals.push_back(std::vector<int>{128, 64, 128});	    //Road
-	bgrVals.push_back(std::vector<int>{222, 40, 60});	    //Pavement
-	bgrVals.push_back(std::vector<int>{0, 128, 128});      //Grünzeug
-	bgrVals.push_back(std::vector<int>{128, 128, 192});    //Sign-Symbol
-	bgrVals.push_back(std::vector<int>{128, 64, 64});	    //Fence
-	bgrVals.push_back(std::vector<int>{128, 0, 64});	    //Vehicle
-	bgrVals.push_back(std::vector<int>{0, 64, 64});        //Person
-	bgrVals.push_back(std::vector<int>{192, 128, 0});	    //Bike
-	bgrVals.push_back(std::vector<int>{255, 255, 255});	    //Not matched in image
+     // Shut GetOpt error messages down (return '?'): 
+     opterr = 0;
+     std::string topic;
+     bool objects = false;
+     int opt;
+     // Retrieve the options:
+     while ( (opt = getopt(argc, argv, "ot:s")) != -1 ) {  // for each option...
+        switch ( opt ) {
+            case 't':
+                    topic = optarg;
+                break;
+            case 'o':
+                    objects = true;
+                break;
+            case 's':
+                    bigSize = true;
+                break;
+            case '?':  // unknown option...
+                    cerr << "Unknown option: '" << char(optopt) << "'!" << endl;
+                break;
+        }
+     }
+
+     std::vector<std::string> bgrVals_string;
+     ros::param::get("/BGR_VALS", bgrVals_string);
+     for (auto& vals : bgrVals_string)
+     {
+        bgrVals.push_back(splitString2int(vals));
+     }
 
 	viewer.setCameraPosition(CAM_PosX,CAM_PosY,CAM_PosZ,CAM_OrtX,CAM_OrtY,CAM_OrtZ,0);
 	//viewer.addCoordinateSystem (1.0);
 
-	subCloud = nh.subscribe("/BugaSegm/pc_segmented", 1, cloudCallback);
-	subObjects = nh.subscribe("/BugaSegm/objectlist", 1, objCallback);
+     subCloud = nh.subscribe(topic, 1, cloudCallback);
+	//subCloud = nh.subscribe("/BugaSegm/pc_segm", 1, cloudCallback);
+     //subCloud = nh.subscribe("/cloud_pcd", 1, cloudCallback);
+	if(objects)
+     {
+         subObjects = nh.subscribe("/BugaSegm/objectlist", 1, objCallback);
+     }
 
-	ros::spin();
+	while(ros::ok())
+	{
+		ros::spinOnce();
+		viewer.spinOnce();
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
 
 	return 0;
 }
