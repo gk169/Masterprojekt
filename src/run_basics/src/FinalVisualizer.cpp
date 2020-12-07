@@ -37,10 +37,11 @@ float PCL_X, PCL_Y, PCL_Z, PCL_Roll, PCL_Yaw, PCL_Pitch;
 std::vector<std::vector<int>> bgrVals;
 //std::vector<int> bgrVals;
 bool bigSize = false;
+bool objects = false;
 
 void Visualize()
 {
-	//if (nullptr == ObjectList || nullptr == PC_Data) return;
+	if ((objects && nullptr == ObjectList) || nullptr == PC_Data) return;
 
 	ROS_INFO("Visualizer - Both received, starting visualization");
 
@@ -75,19 +76,22 @@ void Visualize()
         	viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "input_cloud");
      }
 		
-	int num = 1;
-	/*for (auto& obj : ObjectList->ObjectList)
-	{
-		float r=(rand()%100)/100.0;
-		float g=(rand()%100)/100.0;
-		float b=(rand()%100)/100.0;
-		viewer.addCube(obj.x.min, obj.x.max, obj.y.min, obj.y.max, obj.z.min, obj.z.max, r, g, b, "cube_"+std::to_string(num));
-		viewer.addText3D<pcl::PointXYZ>("Object_"+std::to_string(num)+", class="+std::to_string(obj.classNr),
-			pcl::PointXYZ(obj.x.mean, obj.y.mean, obj.z.mean), 0.2, r, g, b, "text_"+std::to_string(num));
-		num++;
-	}
-
-	ObjectList = nullptr;*/
+	if(objects)
+     {
+        	int num = 1;
+        	for (auto& obj : ObjectList->ObjectList)
+        	{
+        		float r=(rand()%100)/100.0;
+        		float g=(rand()%100)/100.0;
+        		float b=(rand()%100)/100.0;
+        		viewer.addCube(obj.x.min, obj.x.max, obj.y.min, obj.y.max, obj.z.min, obj.z.max, r, g, b, "cube_"+std::to_string(num));
+        		viewer.addText3D<pcl::PointXYZ>("Object_"+std::to_string(num)+", class="+std::to_string(obj.classNr),
+        			pcl::PointXYZ(obj.x.mean, obj.y.mean, obj.z.mean), 0.2, r, g, b, "text_"+std::to_string(num));
+        		num++;
+        	}
+     }        
+    
+    	ObjectList = nullptr;
 	PC_Data = nullptr;
 }
 
@@ -145,7 +149,6 @@ int main(int argc, char **argv)
      // Shut GetOpt error messages down (return '?'): 
      opterr = 0;
      std::string topic;
-     bool objects = false;
      int opt;
      // Retrieve the options:
      while ( (opt = getopt(argc, argv, "ot:s")) != -1 ) {  // for each option...

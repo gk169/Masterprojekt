@@ -7,7 +7,6 @@ sys.path.append('/usr/local/lib/python2.7/site-packages')
 import numpy as np
 import rospy
 import ros_numpy
-import matplotlib.pyplot as plt
 import argparse
 
 from model import LiDAR_Model
@@ -69,17 +68,17 @@ def predict():
     back_cloud_exp = np.expand_dims(back_cloud, axis=0)
     
     batch_cloud = np.concatenate((front_cloud_exp, top_cloud_exp, back_cloud_exp), axis=0)
-    print(batch_cloud.shape)
+    #print(batch_cloud.shape)
             
     Prediction = model.predict(batch_cloud)
         
     Prediction = np.argmax(Prediction,axis=3)
-    print(Prediction.shape)
+    #print(Prediction.shape)
     
     front_predict = Prediction[0,:,:]
     top_predict = Prediction[1,:,:]
     back_predict = Prediction[2,:,:]
-    print(front_predict.shape)
+    #print(front_predict.shape)
     
     #front_predict = front_predict.squeeze()
     #top_predict = top_predict.squeeze()

@@ -42,7 +42,7 @@
 
     <!-- run final_visualizer to show the results -->
     <node pkg="run_basics" type="FinalVisualizer" name="FinalVisualizer" output="screen"
-          args="-t /BugaSegm/pc_combined -s" />
+          args="-t /BugaSegm/pc_combined -o" />
 
     <!-- run rviz -->
     <!--

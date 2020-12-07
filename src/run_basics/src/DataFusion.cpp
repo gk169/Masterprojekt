@@ -80,12 +80,12 @@ void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud,
                 int LiDAR_class = cloud->points[i].intensity + 12;
                 if ((SegNet_class == 4 || SegNet_class == 5) && LiDAR_class == 14) //both class road
                 {
-        			cloud->points[i].ring = (int)bgr[0];
+        			cloud->points[i].ring = 0;//(int)bgr[0];
         			cloud->points[i].intensity = 15;
                 }
                 else if (SegNet_class == 4 || SegNet_class == 5) //SegNet = road
                 {
-                    cloud->points[i].ring = 0; //TODO: unknown object ID
+                    cloud->points[i].ring = 0; //++maxVal; //TODO: unknown object ID
                     cloud->points[i].intensity = 17;
                 }
                 else if (LiDAR_class == 14) //LiDAR = road
@@ -95,7 +95,7 @@ void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud,
                 }
                 else
                 {
-                    cloud->points[i].ring = (int)bgr[0];
+                    cloud->points[i].ring = 0;//(int)bgr[0];
                     cloud->points[i].intensity = SegNet_class;
                 }
 		}

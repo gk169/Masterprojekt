@@ -14,5 +14,5 @@ BGR_VALS: [ "128, 128, 128",    #Sky
             "255, 153, 255",    #Objects LIDAR
             "255, 0, 0",        #Road LIDAR
             "0, 255, 0",        #LIDAR Road + SegNet Road
-            "0, 0, 255",        #LIDAR Road + NOT SegNet Road
-            "0, 255, 255"]      #NOT LIDAR ROAD + SegNet Road
+            "0, 255, 255",        #LIDAR Road + NOT SegNet Road
+            "0, 0, 255"]      #NOT LIDAR ROAD + SegNet Road

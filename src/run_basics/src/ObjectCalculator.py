@@ -1,12 +1,11 @@
 #!/usr/bin/python3
 
-import math
 import rospy
-import pcl
 import ros_numpy
 import numpy as np
-from sensor_msgs.msg import PointCloud2, PointField
+from sensor_msgs.msg import PointCloud2
 from run_basics.msg import MinMaxMean, singleObject, ObjectList
+from sklearn.cluster import DBSCAN
 
 rospy.init_node('ObjectCalculator', anonymous=True)
 pub = rospy.Publisher("/BugaSegm/objectlist", ObjectList, queue_size=1)
@@ -30,85 +29,72 @@ def callbackVelo(data):
     #print(points[:,3].max()) #class
     #print(points[:,4].max()) #object
 
+    #maxObj = (int)(points[:,4].max())
+
+    #print("++++++++++++++++++++++++++++++MAX OBJ: ", maxObj)
     # filter points if distance > 20 meter, dont use them for other calculations anymore
     points = points[points[:,0] < 20]
 
-    maxObj = (int)(points[:,4].max())
+    #maxClass = (int)(points[:,4].max())
 
+    #print("++++++++++++++++++++++++++++++MAX OBJ: ", maxObj)
     fullObjectList = ObjectList()
-    for objNr in range(1,maxObj+1):            #first object ist always irrelevant, sent from segm2object like that
-        #print("OBJECT NUMBER: ", objNr)
-        index = np.where(points[:,4] == objNr)
-        #print(index[0].shape)
-        objPoints = points[index]
-        #print(objPoints.shape)
 
-        if (0 < objPoints.shape[0]):
-            # Filter x values with histogram from nearest to peak + 20%
-            Histogram, Bins = np.histogram(objPoints[:,0], bins=10)
-            HighestPeak = np.argmax(Histogram)
-            NrOfBins = 2
-            LowerBoarder = 0#HighestPeak-NrOfBins if HighestPeak-NrOfBins > 0 else 0
-            UpperBoarder = HighestPeak+NrOfBins+1 if HighestPeak+NrOfBins+1 < 10 else 10
-            objPoints = objPoints[objPoints[:,0] > Bins[LowerBoarder]]
-            objPoints = objPoints[objPoints[:,0] < Bins[UpperBoarder]]
+    #Use Segnet classes (except Sky) and LiDAR not road where Segnet is road.
+    relevant_classes =  list(range(1,12))
+    #relevant_classes.append(13) #add LiDAR_Objects
+    relevant_classes.append(17)
+    
+    index = np.where(np.isin(points[:,3], relevant_classes))
+    relevantPoints = points[index]
+    db_points = DBSCAN(eps=0.75, min_samples=3).fit(relevantPoints[:,0:3])
+    relevantPoints[:,4] = db_points.labels_
+    
+    maxObj = (int)(db_points.labels_.max())
+    for objNr in range(maxObj+1):
+        index_obj = np.where(relevantPoints[:,4] == objNr)
+        objPoints = relevantPoints[index_obj]
+        
+	   #Dimension calculation
+        X = objPoints[:,0]
+        xMinMaxMean = MinMaxMean()
+        xMinMaxMean.min = np.min(X)#X.min()
+        xMinMaxMean.max = np.max(X)#X.max()
+        xMinMaxMean.mean = np.mean(X)#X.mean()
 
-            # Filter y values with histogram (peak bin + 2 bins lower + 2 bins higher -> range of values = up to 50%, values probably more than 50% (because not equaly distributed)
-            Histogram, Bins = np.histogram(objPoints[:,1], bins=10)
-            HighestPeak = np.argmax(Histogram)
-            NrOfBins = 2
-            LowerBoarder = HighestPeak-NrOfBins if HighestPeak-NrOfBins > 0 else 0
-            UpperBoarder = HighestPeak+NrOfBins+1 if HighestPeak+NrOfBins+1 < 10 else 10
-            objPoints = objPoints[objPoints[:,1] > Bins[LowerBoarder]]
-            objPoints = objPoints[objPoints[:,1] < Bins[UpperBoarder]]
+        Y = objPoints[:,1]
+        yMinMaxMean = MinMaxMean()
+        yMinMaxMean.min = np.min(Y)#Y.min()
+        yMinMaxMean.max = np.max(Y)#Y.max()
+        yMinMaxMean.mean = np.mean(Y)#Y.mean()
 
-            # Filter z values with std deviation; include +-2 sigma => 95%
-            Z = objPoints[:,2]
-            meanZ = np.mean(Z) #Z.mean()
-            stdevZ = Z.std()
-            objPoints = objPoints[abs(objPoints[:,2] - meanZ) < 2*stdevZ]
-            
-            #print(objPoints.shape)
+        Z = objPoints[:,2]
+        zMinMaxMean = MinMaxMean()
+        zMinMaxMean.min = np.min(Z)#Z.min()
+        zMinMaxMean.max = np.max(Z)#Z.max()
+        zMinMaxMean.mean = np.mean(Z)#Z.mean()
 
-            if (0 < objPoints.shape[0]):
-	        #Dimension calculation
-                X = objPoints[:,0]
-                xMinMaxMean = MinMaxMean()
-                xMinMaxMean.min = np.min(X)#X.min()
-                xMinMaxMean.max = np.max(X)#X.max()
-                xMinMaxMean.mean = np.mean(X)#X.mean()
+        #Distance calculation
+        dist = np.sqrt(np.power(X, 2)+np.power(Y, 2))
+        distMinMaxMean = MinMaxMean()
+        distMinMaxMean.min = np.min(dist)#dist.min()
+        distMinMaxMean.max = np.max(dist)#dist.max()
+        distMinMaxMean.mean = np.mean(dist)#dist.mean()
 
-                Y = objPoints[:,1]
-                yMinMaxMean = MinMaxMean()
-                yMinMaxMean.min = np.min(Y)#Y.min()
-                yMinMaxMean.max = np.max(Y)#Y.max()
-                yMinMaxMean.mean = np.mean(Y)#Y.mean()
+        currentObject = singleObject()
+        currentObject.x = xMinMaxMean
+        currentObject.y = yMinMaxMean
+        currentObject.z = zMinMaxMean
+        currentObject.distance = distMinMaxMean
+        unique, counts = np.unique(objPoints[:,3], return_counts=True)
+        max_class = unique[np.argmax(counts)]
+        currentObject.classNr = (int)(max_class)
 
-                Z = objPoints[:,2]
-                zMinMaxMean = MinMaxMean()
-                zMinMaxMean.min = np.min(Z)#Z.min()
-                zMinMaxMean.max = np.max(Z)#Z.max()
-                zMinMaxMean.mean = np.mean(Z)#Z.mean()
-
-                #Distance calculation
-                dist = np.sqrt(np.power(X, 2)+np.power(Y, 2))
-                distMinMaxMean = MinMaxMean()
-                distMinMaxMean.min = np.min(dist)#dist.min()
-                distMinMaxMean.max = np.max(dist)#dist.max()
-                distMinMaxMean.mean = np.mean(dist)#dist.mean()
-
-                currentObject = singleObject()
-                currentObject.x = xMinMaxMean
-                currentObject.y = yMinMaxMean
-                currentObject.z = zMinMaxMean
-                currentObject.distance = distMinMaxMean
-                currentObject.classNr = (int)(objPoints[0,3])
-
-                fullObjectList.ObjectList.append(currentObject)
+        fullObjectList.ObjectList.append(currentObject)
 
     pub.publish(fullObjectList)
 
-    rospy.loginfo("ObjectCalculator - Setting SEG_RUNNING to False")
+    rospy.loginfo("ObjectCalculator - Added obj to list " + str(len(fullObjectList.ObjectList)) + " --> Setting SEG_RUNNING to False")
     rospy.set_param('SEG_RUNNING', False)
 
 def listener():
