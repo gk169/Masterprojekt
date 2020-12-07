@@ -121,6 +121,7 @@ void process_topics()
 		ROS_ERROR("DataFusion - Could not convert from '%s' to 'bgr8'.", img_segm->encoding.c_str());
 	}
 
+	cv::Mat fullObjects = cv::Mat::zeros(latest_img.rows, latest_img.cols, CV_8UC3);
 	std::vector<cv::Mat> maskClass;
 	for (uint8_t i=0; i<12; i++)
 	{
@@ -128,7 +129,11 @@ void process_topics()
 		cv::Mat i_mask = cv::Mat(latest_img.rows, latest_img.cols, CV_8UC1, cv::Scalar(i));
 
 		cv::compare(latest_img, i_mask, mask, cv::CMP_EQ);
-		maskClass.push_back(mask);
+
+		cv::Mat resultMask(mask.rows, mask.cols, CV_8UC3, cv::Scalar(0,i,0));
+		cv::bitwise_and(resultMask, resultMask, fullObjects, mask);
+
+		//maskClass.push_back(mask);
 		//cv::imshow("input_img", latest_img);
 		//cv::imshow("mask"+std::to_string(i), 255*mask);
 		//cv::imshow("result", result);
@@ -137,6 +142,7 @@ void process_topics()
 
 	//cv::waitKey(0);
 
+     /*
 	std::vector<std::string> classes_strings {"Sky", "Building", "Pole", "Roadmarking", "Road", "Pavement", "Tree", "Sign-Symbol", "Fence", "Vehicle", "Pedestrian", "Bike"};
 	std::vector<uint8_t> relevant_classes {2,7,10,11}; //Pole, Tree, Pedestrian, Bike (NOT car -> on Buga area no cars allowed)
 	double minArea = 90;
@@ -145,7 +151,7 @@ void process_topics()
 	cv::Mat fullObjects = cv::Mat::zeros(latest_img.rows, latest_img.cols, CV_8UC3);
 	for (auto& mask : maskClass)
 	{
-		if (std::find(relevant_classes.begin(), relevant_classes.end(), classNum) != relevant_classes.end())
+           if (std::find(relevant_classes.begin(), relevant_classes.end(), classNum) != relevant_classes.end())
 		{
 			std::vector<std::vector<cv::Point>> AllContoursInObject;
 			std::vector<cv::Vec4i> HierarchyOfAllContoursInObject;
@@ -185,7 +191,7 @@ void process_topics()
 			cv::bitwise_and(resultMask, resultMask, fullObjects, mask);
 		}
 		classNum++;
-	}
+	}*/
 
 	/* Finished with Image Processing, starting transformation to PointCloud */
 
