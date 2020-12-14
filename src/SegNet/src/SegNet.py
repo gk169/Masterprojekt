@@ -1,14 +1,10 @@
 #!/usr/bin/env python2
 
 import numpy as np
-import matplotlib.pyplot as plt
 import os.path
-import scipy
 import argparse
-import math
 import cv2
 import sys
-import time
 
 import rospy
 from sensor_msgs.msg import Image
