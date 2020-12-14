@@ -2,6 +2,7 @@
 <launch>
     <arg name="view_param_file" default="view_params_camera.yaml" /> 
     <arg name="rgb_param_file" default="bgr_params_ref.yaml" /> 
+    <arg name="point_size" default="" /> 
 
     <rosparam command="load" file="$(env HOME)/Git/Masterprojekt/src/run_basics/launch/$(arg view_param_file)" />
     <rosparam command="load" file="$(env HOME)/Git/Masterprojekt/src/run_basics/launch/$(arg rgb_param_file)" />
@@ -42,7 +43,7 @@
 
     <!-- run final_visualizer to show the results -->
     <node pkg="run_basics" type="FinalVisualizer" name="FinalVisualizer" output="screen"
-          args="-t /BugaSegm/pc_combined -o" />
+          args="-t /BugaSegm/pc_combined -o $(arg point_size)" />
 
     <!-- run rviz -->
     <!--
