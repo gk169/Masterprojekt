@@ -1,0 +1,67 @@
+/*pcl::PointXYZI transformFrontToTopVelo(pcl::PointXYZI point)
+{
+    float sX = 1.25; //Distance Top to Front!
+    float sY = 0.66;
+    float sZ = -1.83;
+
+    float shiftAngle = 45.5;
+    //float pX = (sqrt(2)/2)*point.x-(sqrt(2)/2)*point.y; //Position of Point, rotated 45°!
+    //float pY = (sqrt(2)/2)*point.x+(sqrt(2)/2)*point.y;
+    float pX = (cos(shiftAngle * PI / 180.0))*point.x-(sin(shiftAngle * PI / 180.0))*point.y; //Position of Point, rotated 45°!
+    float pY = (sin(shiftAngle * PI / 180.0))*point.x+(cos(shiftAngle * PI / 180.0))*point.y;
+    float pZ = point.z;
+
+    pcl::PointXYZI ret_point;
+
+    ret_point.x = sX + pX;
+    ret_point.y = sY + pY;
+    ret_point.z = sZ + pZ;
+    //ret_point.ring = point.ring;
+    ret_point.intensity = point.intensity;
+
+    return ret_point;
+}*/
+
+/*pcl::PointXYZI transformBackToTopVelo(pcl::PointXYZI point)
+{
+    float sX = -1.11; //Distance Top to Back!
+    float sY = -0.66;
+    float sZ = -1.78;
+
+    float shiftAngle = -135;
+    //float pX = (sqrt(2)/2)*point.x-(sqrt(2)/2)*point.y; //Position of Point, rotated 135°!
+    //float pY = (sqrt(2)/2)*point.x+(sqrt(2)/2)*point.y;
+    float pX = (cos(shiftAngle * PI / 180.0))*point.x-(sin(shiftAngle * PI / 180.0))*point.y; //Position of Point, rotated 135°!
+    float pY = (sin(shiftAngle * PI / 180.0))*point.x+(cos(shiftAngle * PI / 180.0))*point.y;
+    float pZ = point.z;
+
+    pcl::PointXYZI ret_point;
+
+    ret_point.x = sX + pX;
+    ret_point.y = sY + pY;
+    ret_point.z = sZ + pZ;
+    //ret_point.ring = point.ring;
+    ret_point.intensity = point.intensity;
+
+    return ret_point;
+}*/
+
+    #TODO: remove information
+    '''points[:,2] = points[:,2] - 1.13
+    #camera 1,90
+    #kitty 1,73
+    #camera zu top +0,53
+    #top 2,43
+    #top zu front -1,83
+    #front 0,6
+    #front zu kitti 1,13
+    #back 0,65
+    #back zu kitti 1,08
+    #top zu kitti -0,7
+    #xyz[:,:,2] = xyz[:,:,2] + sensor_height'''
+
+
+front_cloud[:,:,2] = front_cloud[:,:,2] + 1.13
+-    top_cloud[:,:,2] = top_cloud[:,:,2] - 0.7
+-    back_cloud[:,:,2] = back_cloud[:,:,2] + 1.08
+
