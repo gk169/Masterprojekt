@@ -1,17 +1,17 @@
 #!/usr/bin/python3
 
-# ## Create network
-#import sys
-#sys.path.append('/usr/local/lib/python2.7/site-packages')
-
 import numpy as np
 import rospy
 import ros_numpy
 import argparse
+import threading
+
+mutex = threading.Lock()
 
 from model import LiDAR_Model
 from laserscan import SemLaserScan
-from pointcloud_handling import *
+from pointcloud_handling import array_to_PointCloud2, getSampleArrayFromPointCloud_pcd
+from scipy.spatial.transform import Rotation as R
 
 import yaml
 
@@ -30,17 +30,15 @@ front_header = None
 top_header = None
 back_header = None
 
-def PredictionToImage(Prediction):
+'''def PredictionToImage(Prediction):
     # Map masterproject classes to kitti classes 
     Prediction = ProjectToKitti_LUT[Prediction]
     # Map kitti classes to colors
     Image = KittiToColor_LUT[Prediction]
     Image = np.swapaxes(Image,0,1)
     Image = Image[...,[2,1,0]]
-    return Image
+    return Image'''
 
-# ## Predict BugaLog data
-#current_pcd_path = args.pcd
 def predict(): 
     global front_cloud
     global top_cloud
@@ -50,17 +48,12 @@ def predict():
     global back_header
     
     rospy.loginfo("LiDAR_Net - predict")
-    #PointCloud = SemLaserScan(20, KittiToColorDict, project=True, W=1440, H=16, fov_up=15, fov_down=-15.0)
-        
-    #current_sample = getSampleArrayFromPointCloud_pcd(PointCloud, current_pcd_path, args.sensor_height, args.layers)
-    #print(current_sample.shape)
-    #current_sample[:,:,2] = current_sample[:,:,2] -0.4#1.13 #+0.7 #- 1.13
-        
-    #current_sample = current_pcd
-        
+    
+    mutex.acquire() 
     if (front_cloud is None or top_cloud is None or back_cloud is None):
+        mutex.release()
         return
-        
+     
     rospy.loginfo("LiDAR_Net - All topics received, start processing!")
         
     front_cloud_exp = np.expand_dims(front_cloud, axis=0)
@@ -68,40 +61,24 @@ def predict():
     back_cloud_exp = np.expand_dims(back_cloud, axis=0)
     
     batch_cloud = np.concatenate((front_cloud_exp, top_cloud_exp, back_cloud_exp), axis=0)
-    #print(batch_cloud.shape)
-            
+                
     Prediction = model.predict(batch_cloud)
         
     Prediction = np.argmax(Prediction,axis=3)
-    #print(Prediction.shape)
-    
+        
     front_predict = Prediction[0,:,:]
     top_predict = Prediction[1,:,:]
     back_predict = Prediction[2,:,:]
-    #print(front_predict.shape)
     
-    #front_predict = front_predict.squeeze()
-    #top_predict = top_predict.squeeze()
-    #back_predict = back_predict.squeeze()
-    #print(front_predict.shape)
+    #plt.imsave('../data/images/front_predict_BugaLogImage.png', PredictionToImage(front_predict))
+    #plt.imsave('../data/images/top_predict_BugaLogImage.png', PredictionToImage(top_predict))
+    #plt.imsave('../data/images/back_predict_BugaLogImage.png', PredictionToImage(back_predict))
+
+    # Translate back to sensor height
+    front_cloud[:,:,2] -= front['z'] - trained['z']
+    back_cloud[:,:,2] -= back['z'] - trained['z']
+    top_cloud[:,:,2] -= top['z'] - trained['z']
     
-    #plt.imsave('../data/images/front_predict_BugaLogImage.png', PredictionToImage(front_predict)) #TODO-perhaps remove
-    #plt.imsave('../data/images/top_predict_BugaLogImage.png', PredictionToImage(top_predict)) #TODO-perhaps remove
-    #plt.imsave('../data/images/back_predict_BugaLogImage.png', PredictionToImage(back_predict)) #TODO-perhaps remove
-        
-    # # Create result point cloud
-    #intensity = Prediction
-        
-    #input_cloud = current_sample.squeeze()
-    #cloud = input_cloud.copy()
-        
-    #print(cloud.shape)
-    #print(Prediction.shape)
-        
-    # correct previous offset on z-axis (to kitti coords) to get original z-values
-    front_cloud[:,:,2] = front_cloud[:,:,2] + 1.13
-    top_cloud[:,:,2] = top_cloud[:,:,2] - 0.7
-    back_cloud[:,:,2] = back_cloud[:,:,2] + 1.08
     if (args.layers == 'xyzi' or args.layers == 'xyzir'):
         front_cloud[:,:,3]=front_predict
         top_cloud[:,:,3]=top_predict
@@ -115,43 +92,30 @@ def predict():
         front_cloud = np.append(front_cloud, front_predict, axis=2).astype(np.float32)
         top_cloud = np.append(top_cloud, top_predict, axis=2).astype(np.float32)
         back_cloud = np.append(back_cloud, back_predict, axis=2).astype(np.float32)
-        
-    #print(cloud.shape)
-        
-    #cloud[:,:,3]=Prediction
-    #cloud=cloud[:,:,0:4]
-    # überprüfen ob 0:4 oder 1:5
-    #print(cloud.shape)
-        
-    #print(input_cloud[1,1,:])
-    #print(cloud[1,1,:])
     
     front_cloud = np.reshape(front_cloud, (front_cloud.shape[0]*front_cloud.shape[1], 4))
     top_cloud = np.reshape(top_cloud, (top_cloud.shape[0]*top_cloud.shape[1], 4))
     back_cloud = np.reshape(back_cloud, (back_cloud.shape[0]*back_cloud.shape[1], 4))
     
-    front_cloud = front_cloud[front_cloud[:,1]!= -1] # Remove image coordinates where no point was projected onto
-    top_cloud = top_cloud[top_cloud[:,1]!= -1] # Remove image coordinates where no point was projected onto
-    back_cloud = back_cloud[back_cloud[:,1]!= -1] # Remove image coordinates where no point was projected onto
+    # Remove image coordinates where no point was projected onto
+    front_cloud = front_cloud[front_cloud[:,1]!= -1]
+    top_cloud = top_cloud[top_cloud[:,1]!= -1]
+    back_cloud = back_cloud[back_cloud[:,1]!= -1]
     
-    pub_front.publish(array_to_PointCloud2(front_cloud, front_header))
+    rospy.loginfo("LiDAR_Net - Publish new PointCloud on /BugaSegm/pc_segm_front")
+    pub_front.publish(array_to_PointCloud2(front_cloud, front_header))    
     pub_top.publish(array_to_PointCloud2(top_cloud, top_header))
     pub_back.publish(array_to_PointCloud2(back_cloud, back_header))
-    
-    #pcl_front = pcl.PointCloud_PointXYZI(front_cloud)
-    #pcl_top = pcl.PointCloud_PointXYZI(top_cloud)
-    #pcl_back = pcl.PointCloud_PointXYZI(back_cloud)
-    
-    #pcl.save(p, args.pcd.splitpcl_front = pcl.PointCloud_PointXYZI(front_cloud)
-    #pcl_top = pcl.PointCloud_PointXYZI(top_cloud)
-    #pcl_back = pcl.PointCloud_PointXYZI(back_cloud)('.pcd')[0] + "_Predicted.pcd") # TODO - publish statt safe
     
     front_cloud = None
     top_cloud = None
     back_cloud = None
+    
     front_header = None
     top_header = None
     back_header = None
+    
+    mutex.release()
 
 def veloFrontCallback(data):
     global front_cloud
@@ -160,14 +124,23 @@ def veloFrontCallback(data):
     front_header = data.header
     
     pc = ros_numpy.numpify(data)
-    points=np.zeros((pc.shape[0],4))#,dtype="float32")
+    points=np.zeros((pc.shape[0],4))
     points[:,0]=pc['x']
     points[:,1]=pc['y']
     points[:,2]=pc['z']
     points[:,3]=pc['intensity']
+    
+    # Rotate pointcloud to base
+    front_rotation_matrix = R.from_euler('xyz', [front['roll'], front['pitch'], front['yaw']], degrees=False)
+    points[:,0:3] = np.transpose(np.matmul(front_rotation_matrix.as_matrix(), np.transpose(points[:,0:3])))
+    
+    # Project points
     PointCloud = SemLaserScan(20, KittiToColorDict, project=True, W=1440, H=16, fov_up=15, fov_down=-15.0)
-
-    front_cloud = getSampleArrayFromPointCloud_pcd(PointCloud, points, -1.13, args.layers)
+    front_cloud = getSampleArrayFromPointCloud_pcd(PointCloud, points, args.layers)
+    
+    # Translate to trained height
+    if(args.layers != 'ir'):
+        front_cloud[:,:,2] += front['z'] - trained['z']
     
     predict()
 
@@ -178,14 +151,23 @@ def veloTopCallback(data):
     top_header = data.header
     
     pc = ros_numpy.numpify(data)
-    points=np.zeros((pc.shape[0],4))#,dtype="float32")
+    points=np.zeros((pc.shape[0],4))
     points[:,0]=pc['x']
     points[:,1]=pc['y']
     points[:,2]=pc['z']
     points[:,3]=pc['intensity']
+    
+    # Rotate pointcloud to base
+    top_rotation_matrix = R.from_euler('xyz', [top['roll'], top['pitch'], top['yaw']], degrees=False)
+    points[:,0:3] = np.transpose(np.matmul(top_rotation_matrix.as_matrix(), np.transpose(points[:,0:3])))
+    
+    
     PointCloud = SemLaserScan(20, KittiToColorDict, project=True, W=1440, H=16, fov_up=15, fov_down=-15.0)
-
-    top_cloud = getSampleArrayFromPointCloud_pcd(PointCloud, points, 0.7, args.layers)
+    top_cloud = getSampleArrayFromPointCloud_pcd(PointCloud, points, args.layers)
+    
+    # Translate to trained height
+    if(args.layers != 'ir'):
+        top_cloud[:,:,2] += top['z'] - trained['z']
     
     predict()
 
@@ -196,27 +178,26 @@ def veloBackCallback(data):
     back_header = data.header
     
     pc = ros_numpy.numpify(data)
-    points=np.zeros((pc.shape[0],4))#,dtype="float32")
+    points=np.zeros((pc.shape[0],4))
     points[:,0]=pc['x']
     points[:,1]=pc['y']
     points[:,2]=pc['z']
     points[:,3]=pc['intensity']
+    
+    # Rotate pointcloud to base
+    back_rotation_matrix = R.from_euler('xyz', [back['roll'], back['pitch'], back['yaw']], degrees=False)
+    points[:,0:3] = np.transpose(np.matmul(back_rotation_matrix.as_matrix(), np.transpose(points[:,0:3])))    
+    
     PointCloud = SemLaserScan(20, KittiToColorDict, project=True, W=1440, H=16, fov_up=15, fov_down=-15.0)
-
-    back_cloud = getSampleArrayFromPointCloud_pcd(PointCloud, points, -1.08, args.layers)
+    back_cloud = getSampleArrayFromPointCloud_pcd(PointCloud, points, args.layers)
+    
+    # Translate to trained height
+    if(args.layers != 'ir'):
+        back_cloud[:,:,2] += back['z'] - trained['z']
     
     predict()
 
-def listener():
-    rospy.Subscriber('/BugaSegm/synchronized/velodyne/front/velodyne_points', PointCloud2, veloFrontCallback)
-    rospy.Subscriber('/BugaSegm/synchronized/velodyne/top/velodyne_points', PointCloud2, veloTopCallback)
-    rospy.Subscriber('/BugaSegm/synchronized/velodyne/back/velodyne_points', PointCloud2, veloBackCallback)
-
-    # spin() simply keeps python from exiting until this node is stopped
-    rospy.spin()
-
-if __name__ == '__main__':
-    
+if __name__ == '__main__':    
     ###############################
     # Import arguments
     parser = argparse.ArgumentParser()
@@ -262,5 +243,44 @@ if __name__ == '__main__':
     # Load reduced model weights
     model.load_weights(args.weights)
     
+    # Load params
+    front_velo_to_base = rospy.get_param("/BASE_TO_FRONT")
+    front ={'x': front_velo_to_base[0],
+            'y': front_velo_to_base[1],
+            'z': front_velo_to_base[2],
+            'roll': front_velo_to_base[3],
+            'pitch': front_velo_to_base[4],
+            'yaw': front_velo_to_base[5],}
+            
+    top_velo_to_base = rospy.get_param("/BASE_TO_TOP")
+    top ={'x': top_velo_to_base[0],
+            'y': top_velo_to_base[1],
+            'z': top_velo_to_base[2],
+            'roll': top_velo_to_base[3],
+            'pitch': top_velo_to_base[4],
+            'yaw': top_velo_to_base[5],}
+            
+    back_velo_to_base = rospy.get_param("/BASE_TO_BACK")
+    back ={'x': back_velo_to_base[0],
+            'y': back_velo_to_base[1],
+            'z': back_velo_to_base[2],
+            'roll': back_velo_to_base[3],
+            'pitch': back_velo_to_base[4],
+            'yaw': back_velo_to_base[5],}
+            
+    trained_to_base = rospy.get_param("/BASE_TO_TRAINED")
+    trained ={'x': trained_to_base[0],
+            'y': trained_to_base[1],
+            'z': trained_to_base[2],
+            'roll': trained_to_base[3],
+            'pitch': trained_to_base[4],
+            'yaw': trained_to_base[5],}
     #start ros-listener
-    listener()
+    #listener()
+            
+    rospy.Subscriber('/BugaSegm/synchronized/velodyne/front/velodyne_points', PointCloud2, veloFrontCallback)
+    rospy.Subscriber('/BugaSegm/synchronized/velodyne/top/velodyne_points', PointCloud2, veloTopCallback)
+    rospy.Subscriber('/BugaSegm/synchronized/velodyne/back/velodyne_points', PointCloud2, veloBackCallback)
+
+    # spin() simply keeps python from exiting until this node is stopped
+    rospy.spin()
