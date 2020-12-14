@@ -1,0 +1,8 @@
+# [x, y, z, roll, pitch, yaw]
+# x, y, z in m
+# roll, pitch, yaw in RAD
+
+# FOR AUDI:
+BASE_TO_TRAINED: [0, 0, 1.73, 0, 0, 0]
+BASE_TO_FRONT_VELO: [1.35, 0.03, 1.45, 3.1416, 0, 0]
+BASE_TO_CAMERA: [1.65, -0.12, 1.15, 0, 0, 0]

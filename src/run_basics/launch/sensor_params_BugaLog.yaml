@@ -1,0 +1,9 @@
+# [x, y, z, roll, pitch, yaw]
+# x, y, z in m
+# roll, pitch, yaw in RAD
+
+BASE_TO_TRAINED: [0, 0, 1.73, 0, 0, 0]
+BASE_TO_FRONT: [1.96, 0.66, 0.6, 0, 0, 0.79]
+BASE_TO_TOP: [0.71, 0, 2.43, 0, 0, 0]
+BASE_TO_BACK: [-0.4, -0.66, 0.65, 0, 0, 3.93]
+BASE_TO_CAMERA: [1.66, 0, 1.9, 0, 0, 0.0367] 
