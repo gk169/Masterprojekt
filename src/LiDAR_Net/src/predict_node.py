@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 # ## Create network
-import sys
-sys.path.append('/usr/local/lib/python2.7/site-packages')
+#import sys
+#sys.path.append('/usr/local/lib/python2.7/site-packages')
 
 import numpy as np
 import rospy
