@@ -31,11 +31,9 @@ sensor_msgs::PointCloud2::ConstPtr PC_Data = nullptr;
 pcl::visualization::PCLVisualizer viewer("PCL Viewer");
 
 float CAM_PosX, CAM_PosY, CAM_PosZ, CAM_OrtX, CAM_OrtY, CAM_OrtZ;
-float PCL_X, PCL_Y, PCL_Z, PCL_Roll, PCL_Yaw, PCL_Pitch;
 
 // Pointcloud colors
 std::vector<std::vector<int>> bgrVals;
-//std::vector<int> bgrVals;
 bool bigSize = false;
 bool objects = false;
 
@@ -138,13 +136,6 @@ int main(int argc, char **argv)
 	ros::param::get("/CAM_OrtX", CAM_OrtX);
 	ros::param::get("/CAM_OrtY", CAM_OrtY);
 	ros::param::get("/CAM_OrtZ", CAM_OrtZ);
-
-	ros::param::get("/PCL_X", PCL_X);
-	ros::param::get("/PCL_Y", PCL_Y);
-	ros::param::get("/PCL_Z", PCL_Z);
-	ros::param::get("/PCL_Roll", PCL_Roll);
-	ros::param::get("/PCL_Pitch", PCL_Pitch);
-	ros::param::get("/PCL_Yaw", PCL_Yaw);
 
      // Shut GetOpt error messages down (return '?'): 
      opterr = 0;
