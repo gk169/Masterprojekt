@@ -23,9 +23,7 @@ void callback(const PointCloud2::ConstPtr& velodyne_front, const PointCloud2::Co
 	{
 		ROS_INFO("Synchronizer - Sync_Callback not blocked anymore, publishing synchronized data");
 		ros::param::set("/SEG_RUNNING", true);
-		//ROS_INFO("front TimeStamp: %d --- %d", velodyne_front->header.stamp.sec, velodyne_front->header.stamp.nsec);
-		//ROS_INFO("top TimeStamp: %d --- %d", velodyne_top->header.stamp.sec, velodyne_top->header.stamp.nsec);
-		//ROS_INFO("img TimeStamp: %d --- %d", img_compressed->header.stamp.sec, img_compressed->header.stamp.nsec);
+
 		img_compressed_pub.publish(img_compressed);
 		velodyne_front_pub.publish(velodyne_front);
 		velodyne_top_pub.publish(velodyne_top);
