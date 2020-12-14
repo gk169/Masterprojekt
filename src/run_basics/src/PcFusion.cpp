@@ -19,17 +19,17 @@
 
 #define PI 3.14159265
 
-ros::Subscriber subVeloFront;
+//ros::Subscriber subVeloFront;
 ros::Subscriber subVeloTop;
-ros::Subscriber subVeloBack;
+//ros::Subscriber subVeloBack;
 ros::Publisher croppedCloud_pub;
 
-pcl::PointCloud<pcl::PointXYZI>::Ptr FrontCloud;
+//pcl::PointCloud<pcl::PointXYZI>::Ptr FrontCloud;
 pcl::PointCloud<pcl::PointXYZI>::Ptr TopCloud;
-pcl::PointCloud<pcl::PointXYZI>::Ptr BackCloud;
+//pcl::PointCloud<pcl::PointXYZI>::Ptr BackCloud;
 std_msgs::Header header;
 
-std::vector<float> front, back, top;
+std::vector<float> top;//front, back, top;
 
 bool getInAngle(pcl::PointXYZI point, int angleStart, int angleEnd)
 {
@@ -44,13 +44,13 @@ bool getInAngle(pcl::PointXYZI point, int angleStart, int angleEnd)
 
 void process_topics()
 {
-    if(nullptr == FrontCloud || nullptr == TopCloud || nullptr == BackCloud) return;
+    if(/*nullptr == FrontCloud ||*/ nullptr == TopCloud /*|| nullptr == BackCloud*/) return;
 
     ROS_INFO("PcFusion - All topics received, start processing!");
 
     pcl::PointCloud<pcl::PointXYZI> fullCloud;
 
-    pcl::PointCloud<pcl::PointXYZI> FrontCloud_Cropped;
+    /*pcl::PointCloud<pcl::PointXYZI> FrontCloud_Cropped;
     pcl::PointCloud<pcl::PointXYZI> BackCloud_Cropped;
 
     for (std::size_t i = 0; i < FrontCloud->points.size (); ++i)
@@ -71,25 +71,25 @@ void process_topics()
             BackCloud_Cropped.points.push_back(BackCloud->points[i]);
             BackCloud_Cropped.width++;
         }
-    }
+    }*/
 
-    Eigen::Affine3f transform_front = Eigen::Affine3f::Identity();
+    //Eigen::Affine3f transform_front = Eigen::Affine3f::Identity();
     Eigen::Affine3f transform_top = Eigen::Affine3f::Identity();
-    Eigen::Affine3f transform_back = Eigen::Affine3f::Identity();
+    //Eigen::Affine3f transform_back = Eigen::Affine3f::Identity();
 
-    transform_front.translation() << front[0], front[1], front[2];
+    //transform_front.translation() << front[0], front[1], front[2];
     transform_top.translation() << top[0], top[1], top[2];
-    transform_back.translation() << back[0], back[1], back[2];
+    //transform_back.translation() << back[0], back[1], back[2];
     
     // Translate points to base
-    pcl::transformPointCloud(FrontCloud_Cropped, FrontCloud_Cropped, transform_front);
+    //pcl::transformPointCloud(FrontCloud_Cropped, FrontCloud_Cropped, transform_front);
     pcl::transformPointCloud(*TopCloud, *TopCloud, transform_top);
-    pcl::transformPointCloud(BackCloud_Cropped, BackCloud_Cropped, transform_back);
+    //pcl::transformPointCloud(BackCloud_Cropped, BackCloud_Cropped, transform_back);
     
     // Combine point clouds
     pcl::copyPointCloud<pcl::PointXYZI>(*TopCloud, fullCloud);
-    fullCloud += FrontCloud_Cropped;
-    fullCloud += BackCloud_Cropped;
+    //fullCloud += FrontCloud_Cropped;
+    //fullCloud += BackCloud_Cropped;
 
     // Convert point clouds to msg
     sensor_msgs::PointCloud2 out_msg;
@@ -99,12 +99,12 @@ void process_topics()
     ROS_INFO("PcFusion - Publishing preprocessed-pointCloud!");
     croppedCloud_pub.publish(out_msg);
 
-    FrontCloud = nullptr;
+    //FrontCloud = nullptr;
     TopCloud = nullptr;
-    BackCloud = nullptr;
+    //BackCloud = nullptr;
 }
 
-void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
+/*void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 {
     ROS_INFO("PcFusion - Recived new Front-pointCloud!");
 
@@ -118,7 +118,7 @@ void veloFrontCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
     fromPCLPointCloud2(pcl_pc2, *FrontCloud);
 
     process_topics();
-}
+}*/
 
 void veloTopCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 {
@@ -134,7 +134,7 @@ void veloTopCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
     process_topics();
 }
 
-void veloBackCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
+/*void veloBackCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
 {
     ROS_INFO("PcFusion - Recived new Back-pointCloud!");
 
@@ -146,7 +146,7 @@ void veloBackCallback(const sensor_msgs::PointCloud2::ConstPtr& data)
     fromPCLPointCloud2(pcl_pc2, *BackCloud);
 
     process_topics();
-}
+}*/
 
 int main(int argc, char **argv)
 {
@@ -154,16 +154,16 @@ int main(int argc, char **argv)
 
     ros::NodeHandle nh;
 
-    subVeloFront = nh.subscribe("/BugaSegm/pc_segm_front", 1000, veloFrontCallback);
+    //subVeloFront = nh.subscribe("/BugaSegm/pc_segm_front", 1000, veloFrontCallback);
     subVeloTop = nh.subscribe("/BugaSegm/pc_segm_top", 1000, veloTopCallback);
-    subVeloBack = nh.subscribe("/BugaSegm/pc_segm_back", 1000, veloBackCallback);
+    //subVeloBack = nh.subscribe("/BugaSegm/pc_segm_back", 1000, veloBackCallback);
     
     croppedCloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/BugaSegm/pc_segm", 1000);
 
     // load params    
-    ros::param::get("/BASE_TO_FRONT", front);
+    //ros::param::get("/BASE_TO_FRONT", front);
     ros::param::get("/BASE_TO_TOP", top);
-    ros::param::get("/BASE_TO_BACK", back);
+    //ros::param::get("/BASE_TO_BACK", back);
 
     ros::spin();
 

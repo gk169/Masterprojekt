@@ -18,17 +18,17 @@ import yaml
 from sensor_msgs.msg import PointCloud2
 
 rospy.init_node('LiDAR_Net', anonymous=True)
-pub_front = rospy.Publisher("/BugaSegm/pc_segm_front", PointCloud2, queue_size=1)
+#pub_front = rospy.Publisher("/BugaSegm/pc_segm_front", PointCloud2, queue_size=1)
 pub_top = rospy.Publisher("/BugaSegm/pc_segm_top", PointCloud2, queue_size=1)
-pub_back = rospy.Publisher("/BugaSegm/pc_segm_back", PointCloud2, queue_size=1)
+#pub_back = rospy.Publisher("/BugaSegm/pc_segm_back", PointCloud2, queue_size=1)
 
-front_cloud = None
+#front_cloud = None
 top_cloud = None
-back_cloud = None
+#back_cloud = None
 
-front_header = None
+#front_header = None
 top_header = None
-back_header = None
+#back_header = None
 
 '''def PredictionToImage(Prediction):
     # Map masterproject classes to kitti classes 
@@ -40,84 +40,85 @@ back_header = None
     return Image'''
 
 def predict(): 
-    global front_cloud
+    #global front_cloud
     global top_cloud
-    global back_cloud
-    global front_header
+    #global back_cloud
+    #global front_header
     global top_header
-    global back_header
+    #global back_header
     
     rospy.loginfo("LiDAR_Net - predict")
     
     mutex.acquire() 
-    if (front_cloud is None or top_cloud is None or back_cloud is None):
+    if (top_cloud is None):#front_cloud is None or top_cloud is None or back_cloud is None):
         mutex.release()
         return
      
     rospy.loginfo("LiDAR_Net - All topics received, start processing!")
         
-    front_cloud_exp = np.expand_dims(front_cloud, axis=0)
+    #front_cloud_exp = np.expand_dims(front_cloud, axis=0)
     top_cloud_exp = np.expand_dims(top_cloud, axis=0)
-    back_cloud_exp = np.expand_dims(back_cloud, axis=0)
+    #back_cloud_exp = np.expand_dims(back_cloud, axis=0)
     
-    batch_cloud = np.concatenate((front_cloud_exp, top_cloud_exp, back_cloud_exp), axis=0)
+    #batch_cloud = np.concatenate((front_cloud_exp, top_cloud_exp, back_cloud_exp), axis=0)
+    batch_cloud = top_cloud_exp
                 
     Prediction = model.predict(batch_cloud)
         
     Prediction = np.argmax(Prediction,axis=3)
         
-    front_predict = Prediction[0,:,:]
-    top_predict = Prediction[1,:,:]
-    back_predict = Prediction[2,:,:]
+    #front_predict = Prediction[0,:,:]
+    top_predict = Prediction[0,:,:]
+    #back_predict = Prediction[2,:,:]
     
     #plt.imsave('../data/images/front_predict_BugaLogImage.png', PredictionToImage(front_predict))
     #plt.imsave('../data/images/top_predict_BugaLogImage.png', PredictionToImage(top_predict))
     #plt.imsave('../data/images/back_predict_BugaLogImage.png', PredictionToImage(back_predict))
 
     # Translate back to sensor height
-    front_cloud[:,:,2] -= front['z'] - trained['z']
-    back_cloud[:,:,2] -= back['z'] - trained['z']
+    #front_cloud[:,:,2] -= front['z'] - trained['z']
     top_cloud[:,:,2] -= top['z'] - trained['z']
+    #back_cloud[:,:,2] -= back['z'] - trained['z']    
     
     if (args.layers == 'xyzi' or args.layers == 'xyzir'):
-        front_cloud[:,:,3]=front_predict
+        #front_cloud[:,:,3]=front_predict
         top_cloud[:,:,3]=top_predict
-        back_cloud[:,:,3]=back_predict
+        #back_cloud[:,:,3]=back_predict
     elif (args.layers == 'ir'):
         print("not implemented yet")
     elif (args.layers == 'xyz'):
-        front_predict = np.expand_dims(front_predict, axis=2)
+        #front_predict = np.expand_dims(front_predict, axis=2)
         top_predict = np.expand_dims(top_predict, axis=2)
-        back_predict = np.expand_dims(back_predict, axis=2)
-        front_cloud = np.append(front_cloud, front_predict, axis=2).astype(np.float32)
+        #back_predict = np.expand_dims(back_predict, axis=2)
+        #front_cloud = np.append(front_cloud, front_predict, axis=2).astype(np.float32)
         top_cloud = np.append(top_cloud, top_predict, axis=2).astype(np.float32)
-        back_cloud = np.append(back_cloud, back_predict, axis=2).astype(np.float32)
+        #back_cloud = np.append(back_cloud, back_predict, axis=2).astype(np.float32)
     
-    front_cloud = np.reshape(front_cloud, (front_cloud.shape[0]*front_cloud.shape[1], 4))
+    #front_cloud = np.reshape(front_cloud, (front_cloud.shape[0]*front_cloud.shape[1], 4))
     top_cloud = np.reshape(top_cloud, (top_cloud.shape[0]*top_cloud.shape[1], 4))
-    back_cloud = np.reshape(back_cloud, (back_cloud.shape[0]*back_cloud.shape[1], 4))
+    #back_cloud = np.reshape(back_cloud, (back_cloud.shape[0]*back_cloud.shape[1], 4))
     
     # Remove image coordinates where no point was projected onto
-    front_cloud = front_cloud[front_cloud[:,1]!= -1]
+    #front_cloud = front_cloud[front_cloud[:,1]!= -1]
     top_cloud = top_cloud[top_cloud[:,1]!= -1]
-    back_cloud = back_cloud[back_cloud[:,1]!= -1]
+    #back_cloud = back_cloud[back_cloud[:,1]!= -1]
     
     rospy.loginfo("LiDAR_Net - Publish new PointCloud on /BugaSegm/pc_segm_front")
-    pub_front.publish(array_to_PointCloud2(front_cloud, front_header))    
+    #pub_front.publish(array_to_PointCloud2(front_cloud, front_header))    
     pub_top.publish(array_to_PointCloud2(top_cloud, top_header))
-    pub_back.publish(array_to_PointCloud2(back_cloud, back_header))
+    #pub_back.publish(array_to_PointCloud2(back_cloud, back_header))
     
-    front_cloud = None
+    #front_cloud = None
     top_cloud = None
-    back_cloud = None
+    #back_cloud = None
     
-    front_header = None
+    #front_header = None
     top_header = None
-    back_header = None
+    #back_header = None
     
     mutex.release()
 
-def veloFrontCallback(data):
+'''def veloFrontCallback(data):
     global front_cloud
     global front_header
     rospy.loginfo("LiDAR_Net - Received new PointCloud on /BugaSegm/synchronized/velodyne/front/velodyne_points")
@@ -142,7 +143,7 @@ def veloFrontCallback(data):
     if(args.layers != 'ir'):
         front_cloud[:,:,2] += front['z'] - trained['z']
     
-    predict()
+    predict()'''
 
 def veloTopCallback(data):
     global top_cloud
@@ -171,7 +172,7 @@ def veloTopCallback(data):
     
     predict()
 
-def veloBackCallback(data):
+'''def veloBackCallback(data):
     global back_cloud
     global back_header
     rospy.loginfo("LiDAR_Net - Received new PointCloud on /BugaSegm/synchronized/velodyne/back/velodyne_points")
@@ -195,7 +196,7 @@ def veloBackCallback(data):
     if(args.layers != 'ir'):
         back_cloud[:,:,2] += back['z'] - trained['z']
     
-    predict()
+    predict()'''
 
 if __name__ == '__main__':    
     ###############################
@@ -244,13 +245,13 @@ if __name__ == '__main__':
     model.load_weights(args.weights)
     
     # Load params
-    front_velo_to_base = rospy.get_param("/BASE_TO_FRONT")
+    '''front_velo_to_base = rospy.get_param("/BASE_TO_FRONT")
     front ={'x': front_velo_to_base[0],
             'y': front_velo_to_base[1],
             'z': front_velo_to_base[2],
             'roll': front_velo_to_base[3],
             'pitch': front_velo_to_base[4],
-            'yaw': front_velo_to_base[5],}
+            'yaw': front_velo_to_base[5],}'''
             
     top_velo_to_base = rospy.get_param("/BASE_TO_TOP")
     top ={'x': top_velo_to_base[0],
@@ -260,13 +261,13 @@ if __name__ == '__main__':
             'pitch': top_velo_to_base[4],
             'yaw': top_velo_to_base[5],}
             
-    back_velo_to_base = rospy.get_param("/BASE_TO_BACK")
+    '''back_velo_to_base = rospy.get_param("/BASE_TO_BACK")
     back ={'x': back_velo_to_base[0],
             'y': back_velo_to_base[1],
             'z': back_velo_to_base[2],
             'roll': back_velo_to_base[3],
             'pitch': back_velo_to_base[4],
-            'yaw': back_velo_to_base[5],}
+            'yaw': back_velo_to_base[5],}'''
             
     trained_to_base = rospy.get_param("/BASE_TO_TRAINED")
     trained ={'x': trained_to_base[0],
@@ -278,9 +279,9 @@ if __name__ == '__main__':
     #start ros-listener
     #listener()
             
-    rospy.Subscriber('/BugaSegm/synchronized/velodyne/front/velodyne_points', PointCloud2, veloFrontCallback)
+    #rospy.Subscriber('/BugaSegm/synchronized/velodyne/front/velodyne_points', PointCloud2, veloFrontCallback)
     rospy.Subscriber('/BugaSegm/synchronized/velodyne/top/velodyne_points', PointCloud2, veloTopCallback)
-    rospy.Subscriber('/BugaSegm/synchronized/velodyne/back/velodyne_points', PointCloud2, veloBackCallback)
+    #rospy.Subscriber('/BugaSegm/synchronized/velodyne/back/velodyne_points', PointCloud2, veloBackCallback)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
