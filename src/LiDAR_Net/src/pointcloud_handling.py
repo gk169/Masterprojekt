@@ -3,34 +3,19 @@ import numpy as np
 from sensor_msgs.msg import PointCloud2
 import ros_numpy
 
-def getSampleArrayFromPointCloud_pcd_from_file (PointCloud, sample_path, sensor_height, layers): #TODO - Sensorhöhe als input_param - Adjust relative to ground
+def getSampleArrayFromPointCloud_pcd_from_file (PointCloud, sample_path, layers):
     # Load point cloud from pcd
     cloud = pcl.load_XYZI(sample_path)
-    cloud = cloud.to_array()
+    cloud = cloud.to_array()    
+    return getSampleArrayFromPointCloud_pcd (PointCloud, cloud, layers)
     
-    return getSampleArrayFromPointCloud_pcd (PointCloud, cloud, sensor_height, layers)
-    
-def getSampleArrayFromPointCloud_pcd (PointCloud, cloud, sensor_height, layers):
+def getSampleArrayFromPointCloud_pcd (PointCloud, cloud, layers):
     # Get points and intensity (remission) from pcd point cloud
     points = cloud[:, 0:3]    # get xyz
-    #points[:, 2] = points[:, 2] + sensor_height
     remissions = cloud[:, 3]/255 #normal remissions
     # Set points and remission to PointCloud
     PointCloud.set_points(points, remissions)
     xyz = PointCloud.proj_xyz.copy()
-    
-    #points[:,2] = points[:,2] - 1.13
-    #camera 1,90
-    #kitty 1,73
-    #camera zu top +0,53
-    #top 2,43
-    #top zu front -1,83
-    #front 0,6
-    #front zu kitti 1,13
-    #back 0,65
-    #back zu kitti 1,08
-    #top zu kitti -0,7
-    xyz[:,:,2] = xyz[:,:,2] + sensor_height
     
     # Get intensity and range from point cloud
     Intensity = PointCloud.proj_remission.copy()
