@@ -1,8 +1,8 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Conv2D, AveragePooling2D, Conv2DTranspose
+from tensorflow.keras.layers import Input, Conv2D, AveragePooling2D#, Conv2DTranspose
 from tensorflow.keras.layers import BatchNormalization, LeakyReLU, Dropout
 from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam
+#from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import backend as K
 
 class ResContextBlock(tf.keras.Model):
@@ -197,4 +197,3 @@ def LiDAR_Model(input_layers, output_layers):
     model = Model(inputs=input_layer, outputs=logits)
     #model.summary()
     return model
-
