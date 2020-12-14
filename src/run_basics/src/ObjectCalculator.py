@@ -14,30 +14,17 @@ def callbackVelo(data):
     rospy.loginfo("ObjectCalculator - Received new PointCloud on /BugaSegm/pc_segmented")
 
     pc = ros_numpy.numpify(data)
-    #print(data)
-    #print(pc)
 
-    points=np.zeros((pc.shape[0],5))#,dtype="float32")
+    points=np.zeros((pc.shape[0],5))
     points[:,0]=pc['x']
     points[:,1]=pc['y']
     points[:,2]=pc['z']
     points[:,3]=pc['intensity']
     points[:,4]=pc['ring']
 
-    #cloud = pcl.PointCloud_PointXYZI(np.array(points, dtype=np.float32))
-
-    #print(points[:,3].max()) #class
-    #print(points[:,4].max()) #object
-
-    #maxObj = (int)(points[:,4].max())
-
-    #print("++++++++++++++++++++++++++++++MAX OBJ: ", maxObj)
     # filter points if distance > 20 meter, dont use them for other calculations anymore
     points = points[points[:,0] < 20]
 
-    #maxClass = (int)(points[:,4].max())
-
-    #print("++++++++++++++++++++++++++++++MAX OBJ: ", maxObj)
     fullObjectList = ObjectList()
 
     #Use Segnet classes (except Sky) and LiDAR not road where Segnet is road.
@@ -58,28 +45,28 @@ def callbackVelo(data):
 	   #Dimension calculation
         X = objPoints[:,0]
         xMinMaxMean = MinMaxMean()
-        xMinMaxMean.min = np.min(X)#X.min()
-        xMinMaxMean.max = np.max(X)#X.max()
-        xMinMaxMean.mean = np.mean(X)#X.mean()
+        xMinMaxMean.min = np.min(X)
+        xMinMaxMean.max = np.max(X)
+        xMinMaxMean.mean = np.mean(X)
 
         Y = objPoints[:,1]
         yMinMaxMean = MinMaxMean()
-        yMinMaxMean.min = np.min(Y)#Y.min()
-        yMinMaxMean.max = np.max(Y)#Y.max()
-        yMinMaxMean.mean = np.mean(Y)#Y.mean()
+        yMinMaxMean.min = np.min(Y)
+        yMinMaxMean.max = np.max(Y)
+        yMinMaxMean.mean = np.mean(Y)
 
         Z = objPoints[:,2]
         zMinMaxMean = MinMaxMean()
-        zMinMaxMean.min = np.min(Z)#Z.min()
-        zMinMaxMean.max = np.max(Z)#Z.max()
-        zMinMaxMean.mean = np.mean(Z)#Z.mean()
+        zMinMaxMean.min = np.min(Z)
+        zMinMaxMean.max = np.max(Z)
+        zMinMaxMean.mean = np.mean(Z)
 
         #Distance calculation
         dist = np.sqrt(np.power(X, 2)+np.power(Y, 2))
         distMinMaxMean = MinMaxMean()
-        distMinMaxMean.min = np.min(dist)#dist.min()
-        distMinMaxMean.max = np.max(dist)#dist.max()
-        distMinMaxMean.mean = np.mean(dist)#dist.mean()
+        distMinMaxMean.min = np.min(dist)
+        distMinMaxMean.max = np.max(dist)
+        distMinMaxMean.mean = np.mean(dist)
 
         currentObject = singleObject()
         currentObject.x = xMinMaxMean
