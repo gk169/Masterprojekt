@@ -1,0 +1,22 @@
+.# Ubuntu=16.04 //18.04
+# Python 2.7
+# Python 3.6
+# Cuda Toolkit 10.2 //10.1
+cudnn version 7.6.5 for linux and cuda 10.1
+cuda-cublas 10.0
+ros-melodic
+ros-kinetic-desktop-full
+ros-kinetic-ros-numpy
+ros-kinetic-velodyne-pointcloud
+ros-kinetic-compressed-image-transport
+
+libpcl-dev
+python-pip
+python3-pip
+# und jeweils updaten
+
+
+#End
+python-pcl
+manual installation of pcl
+see mail to nico 2020-12-17
