@@ -28,6 +28,8 @@ ImageConstPtr img_segm;
 PointCloud2::ConstPtr pc_preprocessed;
 
 std::vector<float> camera;
+std::vector<float> cameraMatrix_param;
+std::vector<float> distCoeffs_param;
 
 bool getInAngle(double coordinate1, double coordinate2, int angleStart, int angleEnd)
 {
@@ -42,13 +44,7 @@ bool getInAngle(double coordinate1, double coordinate2, int angleStart, int angl
 
 void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud, cv::Mat fullObjects)
 {
-    //#TODO: adapt camera parameters / add camera parameteres to sensor param file, make variables global?
-    double fWidth_px = 1157.519519/4; //1139.081372/4;
-    double fHeight_px = 1158.977934/4; //1140.301608/4;
-    double principal_x = 931.165229/4; //932.960706/4;
-    double principal_y = 529.569982/4; //513.207084/4;
-
-    cv::Mat CamA = (cv::Mat_<double>(3,3) << fWidth_px, 0, principal_x, 0, fHeight_px, principal_y, 0, 0, 1);
+    cv::Mat CamA = (cv::Mat_<double>(3,3) << cameraMatrix_param[0], cameraMatrix_param[1], cameraMatrix_param[2], cameraMatrix_param[3], cameraMatrix_param[4], cameraMatrix_param[5], cameraMatrix_param[6], cameraMatrix_param[7], cameraMatrix_param[8]); //fWidth_px, 0, principal_x, 0, fHeight_px, principal_y, 0, 0, 1);
     
     float sX = -camera[0];
     float sY = -camera[1];
@@ -64,9 +60,6 @@ void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud,
 
     cv::Mat tvec = (cv::Mat_<double>(3,1) << -sY, -sZ, sX);
 
-    cv::Mat distCoeffs = (cv::Mat_<double>(5,1) << 0.050773, -0.106031, -0.001663, 0.000080, 0);
-    //#TODO end
-
     vector<cv::Point3f> cloud_Vec;
     for (std::size_t i = 0; i < cloud->points.size (); ++i)
     {
@@ -74,7 +67,7 @@ void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud,
     }
     
     vector<cv::Point2f> image_points;
-    cv::projectPoints(cloud_Vec, rvec, tvec, CamA, distCoeffs, image_points);
+    cv::projectPoints(cloud_Vec, rvec, tvec, CamA, distCoeffs_param, image_points);
 
     for (std::size_t i = 0; i < cloud->points.size (); ++i)
     {
@@ -201,6 +194,8 @@ int main(int argc, char** argv)
 
     // load params
     ros::param::get("/BASE_TO_CAMERA", camera);
+    ros::param::get("/CAMERA_MATRIX", cameraMatrix_param);
+    ros::param::get("/DIST_COEFFS", distCoeffs_param);
 
     ros::spin();
 

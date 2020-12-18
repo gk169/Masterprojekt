@@ -6,3 +6,18 @@
 BASE_TO_TRAINED: [0, 0, 1.73, 0, 0, 0]
 BASE_TO_TOP: [1.35, 0.03, 1.45, 3.1416, 0, 0]
 BASE_TO_CAMERA: [1.65, -0.12, 1.15, 0, 0, 0]
+
+## Camera parameters
+#scale_factorX=original_pixel_x/resized_pixel_x = 1920/480 = 4 #TODO adjust to audi camera
+#scale_factorY=original_pixel_y/resized_pixel_y = 1080/270 = 4 #TODO adjust to audi camera
+# Camera_Matrix : [	fWidth_px/scale_factorX, 	0,			 				principal_x/scale_factorX,
+#					0, 							fHeight_px/scale_factorY,  	principal_y/scale_factorY,
+#					0,							0,			 				1 ]  
+
+CAMERA_MATRIX: [289.37987975, 0, 232.79130725, 0, 289.7444835, 132.3924955, 0, 0, 1] #TODO adjust to audi camera
+
+# Distortion coefficients
+# Input vector of distortion coefficients (k1,k2,p1,p2[,k3[,k4,k5,k6[,s1,s2,s3,s4[,τx,τy]]]]) of 4, 5, 8, 12 or 14 elements.
+# If the vector is empty, the zero distortion coefficients are assumed. 
+DIST_COEFFS: [0.050773, -0.106031, -0.001663, 0.000080] #TODO adjust to audi camera
+
