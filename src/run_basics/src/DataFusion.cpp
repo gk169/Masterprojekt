@@ -95,12 +95,12 @@ void addSegmToCloud(pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr cloud,
         {
             int SegNet_class = fullObjects.at<uchar>(y, x);
             int LiDAR_class = cloud->points[i].intensity + 12;
-            if ((SegNet_class == 4 || SegNet_class == 5) && LiDAR_class == 14) //both class road
+            if ((SegNet_class == 3 || SegNet_class == 4 || SegNet_class == 5) && LiDAR_class == 14) //both class road
             {
                 
                 cloud->points[i].intensity = 15;
             }
-            else if (SegNet_class == 4 || SegNet_class == 5) //SegNet = road
+            else if (SegNet_class == 3 || SegNet_class == 4 || SegNet_class == 5) //SegNet = road
             {
                 //cloud->points[i].ring = 0;
                 cloud->points[i].intensity = 17;
