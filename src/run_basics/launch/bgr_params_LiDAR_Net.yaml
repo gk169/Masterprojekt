@@ -11,9 +11,9 @@ BGR_VALS: [ "255, 255, 255",    #Sky
             "255, 255, 255",        #Person
             "255, 255, 255",      #Bike
             "255, 255, 255",    #Not matched in LIDAR
-            "255, 153, 255",    #Objects LIDAR
-            "255, 0, 0",        #Road LIDAR
-            "255, 0, 0",        #LIDAR Road + SegNet Road -> same as Road LIDAR
-            "255, 0, 0",        #LIDAR Road + NOT SegNet Road -> same as Road LIDAR
+            "255, 0, 0",    #Objects LIDAR
+            "0, 0, 255",        #Road LIDAR
+            "0, 0, 255",        #LIDAR Road + SegNet Road -> same as Road LIDAR
+            "0, 0, 255",        #LIDAR Road + NOT SegNet Road -> same as Road LIDAR
             "255, 255, 255"]        #NOT LIDAR ROAD + SegNet Road
 # 255, 255, 255 not relevant for this configuration
