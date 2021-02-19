@@ -1,15 +1,15 @@
-BGR_VALS: [ "255, 255, 255",    #Sky
-            "255, 255, 255",        #Building	
-            "255, 255, 255",    #Pfosten
+BGR_VALS: [ "255, 0, 0",    #Sky
+            "255, 0, 0",        #Building	
+            "255, 0, 0",    #Pfosten
             "255, 255, 255",       #Road-Marking
             "255, 255, 255",     #Road
-            "255, 255, 255",      #Pavement
-            "255, 255, 255",      #Grünzeug
-            "255, 255, 255",    #Sign-Symbol
-            "255, 255, 255",      #Fence
-            "255, 255, 255",       #Vehicle
-            "255, 255, 255",        #Person
-            "255, 255, 255",      #Bike
+            "255, 0, 0",      #Pavement
+            "255, 0, 0",      #Grünzeug
+            "255, 0, 0",    #Sign-Symbol
+            "255, 0, 0",      #Fence
+            "255, 0, 0",       #Vehicle
+            "255, 0, 0",        #Person
+            "255, 0, 0",      #Bike
             "255, 255, 255",    #Not matched in LIDAR
             "255, 0, 0",    #Objects LIDAR
             "0, 0, 255",        #Road LIDAR
