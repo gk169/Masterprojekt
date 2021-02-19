@@ -1,9 +1,12 @@
-CAM_PosX: -6.5
+CAM_PosX: -10
 CAM_PosY: 0.0
-CAM_PosZ: 0.5
-CAM_OrtX: 0.0
+CAM_PosZ: 7
+CAM_OrtX: 0.2
 CAM_OrtY: 0.0
 CAM_OrtZ: 1.0
+CAM_ViewX: 1.7
+CAM_ViewY: 0.0 #1.3
+CAM_ViewZ: 4.4
 #PCL_X: 0.0
 #PCL_Y: 0.0
 #PCL_Z: 0.0

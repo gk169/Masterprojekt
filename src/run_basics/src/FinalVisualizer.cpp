@@ -30,7 +30,7 @@ sensor_msgs::PointCloud2::ConstPtr PC_Data = nullptr;
 // PCL viewer //
 pcl::visualization::PCLVisualizer viewer("PCL Viewer");
 
-float CAM_PosX, CAM_PosY, CAM_PosZ, CAM_OrtX, CAM_OrtY, CAM_OrtZ;
+float CAM_PosX, CAM_PosY, CAM_PosZ, CAM_OrtX, CAM_OrtY, CAM_OrtZ, CAM_ViewX, CAM_ViewY, CAM_ViewZ;
 
 // Pointcloud colors
 std::vector<std::vector<int>> bgrVals;
@@ -87,8 +87,16 @@ void Visualize()
         			pcl::PointXYZ(obj.x.mean, obj.y.mean, obj.z.mean), 0.2, r, g, b, "text_"+std::to_string(num));
         		num++;
         	}
-     }        
+     }       
+      
+    //std::vector<pcl::visualization::Camera> cam;
+    //viewer.getCameras(cam);
     
+    //std::cout << "CAM:" << std::endl;
+    //std::cout << cam[0].pos[0] << " : " << cam[0].pos[1] << " : " << cam[0].pos[2] << std::endl; 
+    //std::cout << cam[0].view[0] << " : " << cam[0].view[1] << " : " << cam[0].view[2] << std::endl; 
+    //std::cout << cam[0].focal[0] << " : " << cam[0].focal[1] << " : " << cam[0].focal[2] << std::endl; 
+  
     	ObjectList = nullptr;
 	PC_Data = nullptr;
 }
@@ -136,6 +144,9 @@ int main(int argc, char **argv)
 	ros::param::get("/CAM_OrtX", CAM_OrtX);
 	ros::param::get("/CAM_OrtY", CAM_OrtY);
 	ros::param::get("/CAM_OrtZ", CAM_OrtZ);
+	ros::param::get("/CAM_ViewX", CAM_ViewX);
+	ros::param::get("/CAM_ViewY", CAM_ViewY);
+	ros::param::get("/CAM_ViewZ", CAM_ViewZ);
 
      // Shut GetOpt error messages down (return '?'): 
      opterr = 0;
@@ -166,7 +177,7 @@ int main(int argc, char **argv)
         bgrVals.push_back(splitString2int(vals));
      }
 
-	viewer.setCameraPosition(CAM_PosX,CAM_PosY,CAM_PosZ,CAM_OrtX,CAM_OrtY,CAM_OrtZ,0);
+	viewer.setCameraPosition(CAM_PosX,CAM_PosY,CAM_PosZ,CAM_ViewX,CAM_ViewY,CAM_ViewZ,CAM_OrtX,CAM_OrtY,CAM_OrtZ,0);
 	//viewer.addCoordinateSystem (1.0);
 
      subCloud = nh.subscribe(topic, 1, cloudCallback);

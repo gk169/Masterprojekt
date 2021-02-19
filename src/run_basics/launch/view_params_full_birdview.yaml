@@ -4,6 +4,9 @@ CAM_PosZ: 30
 CAM_OrtX: 1.0
 CAM_OrtY: 0.0
 CAM_OrtZ: 0.0
+CAM_ViewX: 0.0
+CAM_ViewY: 0.0
+CAM_ViewZ: 0.0
 #PCL_X: 0.0
 #PCL_Y: 0.0
 #PCL_Z: 0.0
